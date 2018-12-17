@@ -1,0 +1,7 @@
+[workspace]
+
+members = [
+	"lval",
+	"parse",
+	"rispreter-repl",
+]

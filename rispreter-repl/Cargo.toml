@@ -1,0 +1,8 @@
+[package]
+name = "rispreter-repl"
+version = "0.1.0"
+authors = ["Marcos Frankowicz <marcosfrankowicz@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+linefeed = "0.5.4"

@@ -1,0 +1,1 @@
+{"rustc":5113389540416417165,"features":"[]","target":14777571228588429946,"profile":9025206959469169476,"path":14398859091588631674,"deps":[["linefeed v0.5.4","linefeed",11128689906990199470]],"local":[{"MtimeBased":[[1545086055,996082820],".fingerprint/rispreter-repl-379b6e5912836ba2/dep-bin-rispreter_repl-379b6e5912836ba2"]}],"rustflags":[],"edition":"Edition2018"}
