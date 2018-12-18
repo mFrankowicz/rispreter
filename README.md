@@ -7,6 +7,8 @@
 
 Rispreter it's my attempt to port **orangeduck/BuildYourOwnLisp** to Rust and learn some rusties and lispies (and c) along the way.
 
+#### **Contributions and corrections and everything are welcome.**
+
 There are some objectives/todos that I want to see in this project, they are (in priority order somehow?) :
 
 * **Learn some programming and have some fun.**
@@ -35,6 +37,10 @@ There are some objectives/todos that I want to see in this project, they are (in
 
 - Performance should be considered, it's not like I want to see a fast lisp implementation in Rust. Just that it's cool to know that a thing you are building it's working cool and easy.
 
+- Safe and unsafe rust.
+
+    - We should keep ourselves in safe rust as much as possible. Unsafe rust is for another projet after we get this to the core functionality.
+
 - The **Bonus Projects • Chapter 16** of the guide shows some cool ideias that could be implemented after we get a reasonable amount of working code. 
 
     - Native types are already a priority.
@@ -57,7 +63,7 @@ I shall mention some links, projects and references that I follow while i work i
 
 - https://en.wikibooks.org/wiki/Write_Yourself_a_Scheme_in_48_Hours
 
-- The https://blog.subnetzero.io/ along with the educational project https://gitlab.com/subnetzero/iridium it's a interisting project that implement a register based VM. That made me think in Lisp-machines and how they could be implemented as a VM or how to think in a bytecode level while implementing a language.
+- The https://blog.subnetzero.io/ along with the educational project https://gitlab.com/subnetzero/iridium it's a interisting project that implement a register based VM in Rust. That made me think in Lisp-machines and how they could be implemented as a VM or how to think in a bytecode level while implementing a language.
 
 - https://www.nand2tetris.org/ its a source of inspiration and is what made me fall in love with programming. 
 
