@@ -1,12 +1,12 @@
 use crate::lval_def::*;
 
-pub fn lval_eval(lenv: &Lenv, lval: &mut Lval) -> Lval {
+pub fn lval_eval(lenv: &mut Lenv, lval: &mut Lval) -> Lval {
     match &lval.ltype {
         LvalType::LVAL_SYM(sym) => {
             let x = lenv.get(&sym);
             match x {
                 Some(v) => {
-                    return v.clone();
+                    return *v.clone();
                 },
                 None => {
                     return Lval::lval_err(format!("Can't find {:?}", sym));
@@ -22,7 +22,7 @@ pub fn lval_eval(lenv: &Lenv, lval: &mut Lval) -> Lval {
     }
 }
 
-pub fn lval_eval_sexpr(lenv: &Lenv, lval: &mut Lval) -> Lval {
+pub fn lval_eval_sexpr(lenv: &mut Lenv, lval: &mut Lval) -> Lval {
 
     for i in 0..lval.cell.len() {
         lval.cell[i] = Box::new(lval_eval(lenv, &mut lval.cell[i]));
@@ -72,13 +72,13 @@ pub mod tests {
     /// symbol
     fn test_lval_single() {
         let mut lval = Lval::lval_num(1.0);
-        let lenv = Lenv::new();
-        let result = lval_eval(&lenv, &mut lval);
+        let mut lenv = Lenv::new();
+        let result = lval_eval(&mut lenv, &mut lval);
         assert_eq!(result, Lval::lval_num(1.0));
 
         let mut lval = Lval::lval_sexpr();
-        let lenv = Lenv::new();
-        let result = lval_eval(&lenv, &mut lval);
+        let mut lenv = Lenv::new();
+        let result = lval_eval(&mut lenv, &mut lval);
         assert_eq!(result, Lval::lval_sexpr());
     }
 
@@ -94,7 +94,7 @@ pub mod tests {
         let second = Lval::lval_num(1.0);
         let third = Lval::lval_num(1.0);
         top.add_cell(first).add_cell(second).add_cell(third);
-        let res = lval_eval(&env, &mut top);
+        let res = lval_eval(&mut env, &mut top);
         assert_eq!(res.ltype, LvalType::LVAL_NUM(2.0));
     }
 
@@ -114,7 +114,7 @@ pub mod tests {
         let third_three = Lval::lval_num(3.0);
         third.add_cell(third_one).add_cell(third_two).add_cell(third_three);
         top.add_cell(first).add_cell(second).add_cell(third);
-        let res = lval_eval(&env, &mut top);
+        let res = lval_eval(&mut env, &mut top);
         assert_eq!(res.ltype, LvalType::LVAL_NUM(6.0));
     }
 
@@ -133,7 +133,7 @@ pub mod tests {
         let c = Lval::lval_num(3.0);
         qexpr.add_cell(a).add_cell(b).add_cell(c);
         top.add_cell(head).add_cell(qexpr);
-        let res = lval_eval(&env, &mut top);
+        let res = lval_eval(&mut env, &mut top);
         assert_eq!(res.ltype, LvalType::LVAL_NUM(1.0));
     }
 }

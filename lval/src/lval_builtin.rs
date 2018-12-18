@@ -1,7 +1,14 @@
 use crate::lval_def::*;
 use crate::lval_eval;
 
-pub struct Lbuiltin(pub fn(lenv: &Lenv, lval: &mut Lval) -> Lval);
+pub struct Lbuiltin(pub fn(lenv: &mut Lenv, lval: &mut Lval) -> Lval);
+
+// pub struct LFunction<'a> {
+//     name: String,
+//     env: Box<&'a Lenv>,
+//     formals: Box<Lval>,
+//     body: Box<Lval>
+// }
 
 impl Lbuiltin {
     pub fn add_builtins(lenv: &mut Lenv) {
@@ -16,6 +23,7 @@ impl Lbuiltin {
         lenv.add_builtin("join", Lbuiltin::lbuiltin_join());
         lenv.add_builtin("cons", Lbuiltin::lbuiltin_cons());
         lenv.add_builtin("eval", Lbuiltin::lbuiltin_eval());
+        lenv.add_builtin("def", Lbuiltin::lbuiltin_def());
 
     }
 
@@ -62,6 +70,10 @@ impl Lbuiltin {
     fn lbuiltin_eval() -> Lbuiltin {
         Lbuiltin(eval)
     }
+
+    fn lbuiltin_def() -> Lbuiltin {
+        Lbuiltin(def)
+    }
 }
 
 impl PartialEq for Lbuiltin {
@@ -84,28 +96,28 @@ impl std::fmt::Debug for Lbuiltin {
 
 /// builtins
 
-fn add(lenv: &Lenv, lval: &mut Lval,) -> Lval {
+fn add(lenv: &mut Lenv, lval: &mut Lval,) -> Lval {
     op(lenv, lval, '+')
 }
 
-fn sub(lenv: &Lenv, lval: &mut Lval,) -> Lval {
+fn sub(lenv: &mut Lenv, lval: &mut Lval,) -> Lval {
     op(lenv, lval, '-')
 }
 
-fn mul(lenv: &Lenv, lval: &mut Lval,) -> Lval {
+fn mul(lenv: &mut Lenv, lval: &mut Lval,) -> Lval {
     op(lenv, lval, '*')
 }
 
-fn div(lenv: &Lenv, lval: &mut Lval,) -> Lval {
+fn div(lenv: &mut Lenv, lval: &mut Lval,) -> Lval {
     op(lenv, lval, '/')
 }
 
-fn modl(lenv: &Lenv, lval: &mut Lval,) -> Lval {
+fn modl(lenv: &mut Lenv, lval: &mut Lval,) -> Lval {
     op(lenv, lval, '%')
 }
 
 // TODO: make better errors
-fn op(_lenv: &Lenv, lval: &mut Lval, op: char) -> Lval {
+fn op(_lenv: &mut Lenv, lval: &mut Lval, op: char) -> Lval {
 
     let mut x = lval.lval_pop();
     let iter = lval.cell.clone();
@@ -137,41 +149,53 @@ fn op(_lenv: &Lenv, lval: &mut Lval, op: char) -> Lval {
     x
 }
 
-fn head(_lenv: &Lenv, lval: &mut Lval) -> Lval {
+fn head(_lenv: &mut Lenv, lval: &mut Lval) -> Lval {
     let mut qexpr = lval.lval_pop();
     let head = qexpr.lval_pop();
     head
 }
 
-fn tail(_env: &Lenv, lval: &mut Lval) ->  Lval {
+fn tail(_env: &mut Lenv, lval: &mut Lval) ->  Lval {
     let mut qexpr = lval.lval_pop();
     let tail = qexpr.lval_split(1);
     tail
 }
 
-fn list(_env: &Lenv, lval: &mut Lval) -> Lval {
+fn list(_env: &mut Lenv, lval: &mut Lval) -> Lval {
     lval.ltype = LvalType::LVAL_QEXPR;
     lval.clone()
 }
 
-fn join(_env: &Lenv, lval: &mut Lval) -> Lval {
+fn join(_env: &mut Lenv, lval: &mut Lval) -> Lval {
     let mut y = lval.lval_pop();
     let mut x = lval.lval_pop();
     y.cell.append(&mut x.cell);
     y
 }
 
-fn cons(_env: &Lenv, lval: &mut Lval) -> Lval {
+fn cons(_env: &mut Lenv, lval: &mut Lval) -> Lval {
     let x = lval.lval_pop();
     let mut qexpr = lval.lval_pop();
     qexpr.cell.push_front(Box::new(x));
     qexpr
 }
 
-fn eval(env: &Lenv, lval: &mut Lval) -> Lval {
+fn eval(env: &mut Lenv, lval: &mut Lval) -> Lval {
     let mut x = lval.lval_take(0);
     x.ltype = LvalType::LVAL_SEXPR;
-    lval_eval::lval_eval(&env, &mut x)
+    lval_eval::lval_eval(env, &mut x)
+}
+
+fn def(env: &mut Lenv, lval: &mut Lval) -> Lval {
+    let symbols_list = lval.lval_pop();
+    // TODO: ensure all elements are symbols
+    // TODO: check equal number of assigns eg: {a b} 1 2, {a b c} 1 2 3, etc
+    for i in 0..symbols_list.cell.len() {
+        if let LvalType::LVAL_SYM(str) = &symbols_list.cell[i].ltype {
+            env.put(str.to_string(), lval.cell[i].clone());
+        }
+    }
+    Lval::lval_sexpr()
 }
 
 #[cfg(test)]
@@ -181,7 +205,7 @@ mod tests {
     #[test]
     /// tests the expression (+ 1 2 3)
     fn lbuiltin_op_add() {
-        let lenv = Lenv::new();
+        let mut lenv = Lenv::new();
         let mut top = Lval::lval_sexpr();
         let plus_op = Lval::lval_sym("+".to_string());
         let one = Lval::lval_num(1.0);
@@ -191,7 +215,7 @@ mod tests {
 
         assert_eq!(top.cell.len(), 4);
         top.lval_pop();
-        top = op(&lenv, &mut top, '+');
+        top = op(&mut lenv, &mut top, '+');
         println!("{:?}", top);
         assert_eq!(top.cell.len(), 0);
         assert_eq!(top.ltype, LvalType::LVAL_NUM(6.0));
@@ -200,7 +224,7 @@ mod tests {
     #[test]
     /// tests the expression (- 4 2 1)
     fn lbuiltin_op_sub() {
-        let lenv = Lenv::new();
+        let mut lenv = Lenv::new();
         let mut top = Lval::lval_sexpr();
         let sub_op = Lval::lval_sym("-".to_string());
         let one = Lval::lval_num(4.0);
@@ -210,7 +234,7 @@ mod tests {
 
         assert_eq!(top.cell.len(), 4);
         top.lval_pop();
-        top = op(&lenv, &mut top, '-');
+        top = op(&mut lenv, &mut top, '-');
         println!("{:?}", top);
         assert_eq!(top.cell.len(), 0);
         assert_eq!(top.ltype, LvalType::LVAL_NUM(1.0));
@@ -219,7 +243,7 @@ mod tests {
     #[test]
     /// tests the expression (* 1 2 4)
     fn lbuiltin_op_mul() {
-        let lenv = Lenv::new();
+        let mut lenv = Lenv::new();
         let mut top = Lval::lval_sexpr();
         let mult_op = Lval::lval_sym("*".to_string());
         let one = Lval::lval_num(1.0);
@@ -229,7 +253,7 @@ mod tests {
 
         assert_eq!(top.cell.len(), 4);
         top.lval_pop();
-        top = op(&lenv, &mut top, '*');
+        top = op(&mut lenv, &mut top, '*');
         println!("{:?}", top);
         assert_eq!(top.cell.len(), 0);
         assert_eq!(top.ltype, LvalType::LVAL_NUM(8.0));
@@ -238,7 +262,7 @@ mod tests {
     #[test]
     /// tests the expression (/ 9 5 2)
     fn lbuiltin_op_div() {
-        let lenv = Lenv::new();
+        let mut lenv = Lenv::new();
         let mut top = Lval::lval_sexpr();
         let div_op = Lval::lval_sym("/".to_string());
         let one = Lval::lval_num(9.0);
@@ -248,7 +272,7 @@ mod tests {
 
         assert_eq!(top.cell.len(), 4);
         top.lval_pop();
-        top = op(&lenv, &mut top, '/');
+        top = op(&mut lenv, &mut top, '/');
         println!("{:?}", top);
         assert_eq!(top.cell.len(), 0);
         assert_eq!(top.ltype, LvalType::LVAL_NUM(0.9));
@@ -256,7 +280,7 @@ mod tests {
 
     #[test]
     fn lbuiltin_head() {
-        let lenv = Lenv::new();
+        let mut lenv = Lenv::new();
         let mut top = Lval::lval_sexpr();
         let head_op = Lval::lval_sym("head".to_string());
         let mut qexpr = Lval::lval_qexpr();
@@ -266,13 +290,13 @@ mod tests {
         qexpr.add_cell(a).add_cell(b).add_cell(c);
         top.add_cell(head_op).add_cell(qexpr);
         top.lval_pop();
-        top = head(&lenv, &mut top);
+        top = head(&mut lenv, &mut top);
         assert_eq!(top.ltype, LvalType::LVAL_NUM(1.0));
     }
 
     #[test]
     fn lbuiltin_tail() {
-        let lenv = Lenv::new();
+        let mut lenv = Lenv::new();
         let mut top = Lval::lval_sexpr();
         let head_op = Lval::lval_sym("head".to_string());
         let mut qexpr = Lval::lval_qexpr();
@@ -282,7 +306,7 @@ mod tests {
         qexpr.add_cell(a).add_cell(b).add_cell(c);
         top.add_cell(head_op).add_cell(qexpr);
         top.lval_pop();
-        top = tail(&lenv, &mut top);
+        top = tail(&mut lenv, &mut top);
         assert_eq!(top.ltype, LvalType::LVAL_QEXPR);
         assert_eq!(top.cell[0].ltype, LvalType::LVAL_NUM(2.0));
         assert_eq!(top.cell[1].ltype, LvalType::LVAL_NUM(3.0));
@@ -290,7 +314,7 @@ mod tests {
 
     #[test]
     fn lbuiltin_cons() {
-        let lenv = Lenv::new();
+        let mut lenv = Lenv::new();
         let mut top = Lval::lval_sexpr();
         let head_op = Lval::lval_sym("cons".to_string());
         let to_be_consed = Lval::lval_num(1.0);
@@ -302,7 +326,7 @@ mod tests {
 
         top.add_cell(head_op).add_cell(to_be_consed).add_cell(qexpr);
         top.lval_pop();
-        top = cons(&lenv, &mut top);
+        top = cons(&mut lenv, &mut top);
         assert_eq!(top.ltype, LvalType::LVAL_QEXPR);
         assert_eq!(top.cell[0].ltype, LvalType::LVAL_NUM(1.0));
         assert_eq!(top.cell[1].ltype, LvalType::LVAL_NUM(2.0));
@@ -311,7 +335,7 @@ mod tests {
 
     #[test]
     fn lbuiltin_list() {
-        let lenv = Lenv::new();
+        let mut lenv = Lenv::new();
         let mut top = Lval::lval_sexpr();
         let one = Lval::lval_num(1.0);
         let two = Lval::lval_num(2.0);
@@ -319,7 +343,7 @@ mod tests {
         top.add_cell(one).add_cell(two).add_cell(three);
         assert_eq!(top.ltype, LvalType::LVAL_SEXPR);
         println!("{:?}", top);
-        top = list(&lenv, &mut top);
+        top = list(&mut lenv, &mut top);
         println!("{:?}", top);
         assert_eq!(top.ltype, LvalType::LVAL_QEXPR);
         assert_eq!(top.cell.len(), 3);
@@ -327,7 +351,7 @@ mod tests {
 
     #[test]
     fn lbuiltin_join() {
-        let lenv = Lenv::new();
+        let mut lenv = Lenv::new();
         let mut top = Lval::lval_sexpr();
 
         let mut one = Lval::lval_qexpr();
@@ -343,7 +367,7 @@ mod tests {
         top.add_cell(one).add_cell(two);
 
         println!("{:?}", top);
-        top = join(&lenv, &mut top);
+        top = join(&mut lenv, &mut top);
         println!("{:?}", top);
         assert_eq!(top.ltype, LvalType::LVAL_QEXPR);
         assert_eq!(top.cell.len(), 4);
@@ -364,7 +388,7 @@ mod tests {
 
         sub.add_cell(one).add_cell(two).add_cell(three);
         top.add_cell(sub);
-        top = eval(&lenv, &mut top);
+        top = eval(&mut lenv, &mut top);
         assert_eq!(top.ltype, LvalType::LVAL_NUM(3.0));
     }
 }

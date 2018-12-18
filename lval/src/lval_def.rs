@@ -46,6 +46,7 @@ impl fmt::Display for LvalType {
 #[derive(PartialEq, Debug, Clone)]
 pub struct Lval {
     pub ltype: LvalType,
+    pub lenv: Box<Lenv>,
     pub cell: VecDeque<Box<Lval>>,
 }
 
@@ -54,6 +55,7 @@ impl Lval {
     pub fn lval_num(num: f64) -> Lval {
         Lval {
             ltype: LvalType::LVAL_NUM(num),
+            lenv: Box::new(Lenv::new()),
             cell: VecDeque::new(),
         }
     }
@@ -61,6 +63,7 @@ impl Lval {
     pub fn lval_err(err: String) -> Lval {
         Lval {
             ltype: LvalType::LVAL_ERR(err),
+            lenv: Box::new(Lenv::new()),
             cell: VecDeque::new(),
         }
     }
@@ -68,6 +71,7 @@ impl Lval {
     pub fn lval_sym(sym: String) -> Lval {
         Lval {
             ltype: LvalType::LVAL_SYM(sym),
+            lenv: Box::new(Lenv::new()),
             cell: VecDeque::new(),
         }
     }
@@ -75,6 +79,7 @@ impl Lval {
     pub fn lval_string(str: String) -> Lval {
         Lval {
             ltype: LvalType::LVAL_STRING(str),
+            lenv: Box::new(Lenv::new()),
             cell: VecDeque::new(),
         }
     }
@@ -82,6 +87,7 @@ impl Lval {
     pub fn lval_sexpr() -> Lval {
         Lval {
             ltype: LvalType::LVAL_SEXPR,
+            lenv: Box::new(Lenv::new()),
             cell: VecDeque::new(),
         }
     }
@@ -89,6 +95,7 @@ impl Lval {
     pub fn lval_qexpr() -> Lval {
         Lval {
             ltype: LvalType::LVAL_QEXPR,
+            lenv: Box::new(Lenv::new()),
             cell: VecDeque::new(),
         }
     }
@@ -96,6 +103,7 @@ impl Lval {
     pub fn lval_fun(func: Lbuiltin) -> Lval {
         Lval {
             ltype: LvalType::LVAL_FUN(func),
+            lenv: Box::new(Lenv::new()),
             cell: VecDeque::new(),
         }
     }
@@ -159,7 +167,7 @@ impl fmt::Display for Lval {
 
 #[derive(PartialEq, Debug, Clone)]
 pub struct Lenv {
-    vals: HashMap<String, Lval>,
+    vals: HashMap<String, Box<Lval>>,
 }
 
 impl Lenv {
@@ -171,11 +179,15 @@ impl Lenv {
 
     pub fn add_builtin(&mut self, name: &str, func: Lbuiltin) {
         let lval = Lval::lval_fun(func);
-        self.vals.insert(name.to_string(), lval);
+        self.vals.insert(name.to_string(), Box::new(lval));
     }
 
-    pub fn get(&self, k: &String) -> Option<&Lval> {
+    pub fn get(&self, k: &String) -> Option<&Box<Lval>> {
         self.vals.get(k)
+    }
+
+    pub fn put(&mut self, k: String, v: Box<Lval>) {
+        self.vals.insert(k, v);
     }
 }
 
