@@ -1,20 +1,31 @@
 extern crate linefeed;
+extern crate parse_read;
+extern crate lval;
 
 use std::io;
-// use linefeed::*;
+use linefeed::*;
+use parse_read::read::read;
+use parse_read::parse::parse_risp;
+
+use lval::lval_eval::lval_eval;
+use lval::lval_def::Lenv;
+use lval::lval_builtin::Lbuiltin;
 
 fn main() -> io::Result<()>{
-    // let interface = Interface::new("risp-repl")?;
+    let mut lenv = Lenv::new();
+    Lbuiltin::add_builtins(&mut lenv);
 
-    // interface.set_prompt("risp> ")?;
+    let interface = Interface::new("risp-repl")?;
 
-    // while let ReadResult::Input(line) = interface.read_line()? {
-    //     println!("read input: {:?}", read(parse_risp(line.as_bytes())));
+    interface.set_prompt("risp> ")?;
 
-    //     if !line.trim().is_empty() {
-    //         interface.add_history_unique(line);
-    //     }
-    // }
+    while let ReadResult::Input(line) = interface.read_line()? {
+        println!("read input: {:?}", lval_eval(&lenv, &mut read(parse_risp(line.as_bytes()))));
+
+        if !line.trim().is_empty() {
+            interface.add_history_unique(line);
+        }
+    }
 
     Ok(())
 }

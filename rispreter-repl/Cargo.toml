@@ -6,3 +6,5 @@ edition = "2018"
 
 [dependencies]
 linefeed = "0.5.4"
+parse_read = {path = "../parse_read"}
+lval = {path = "../lval"}

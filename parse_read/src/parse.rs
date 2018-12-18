@@ -1,14 +1,7 @@
-#[macro_use]
-extern crate nom;
-
 use nom::{digit, alphanumeric, multispace, AsChar, anychar};
 
 use std::str;
 use std::str::FromStr;
-
-extern crate lval;
-
-use lval::lval_def::{Lval, LvalType, Lenv};
 
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub enum NumType {
@@ -134,16 +127,17 @@ named!(
     user_symbol<String>,
     map!(
         map_res!(
-            is_a!("qwertyuiopasdfghjklçzxcvbnmQWERTYUIOPASDFGHJKLÇZXCVBNM1234567890_§?£¢¬~"), str::from_utf8),
+            is_a!("qwertyuiopasdfghjklçzxcvbnmQWERTYUIOPASDFGHJKLÇZXCVBNM1234567890_§?£¢¬~+-*/%"), str::from_utf8),
             |s| {s.to_string()}
         )
 );
 
+// TODO: implement prelude enums
 named!(
     symbol<SymbolKind>,
     alt!(
         map!(user_symbol, |u| {SymbolKind::User(u)}) |
-        map!(prelude_keywords, |p| {SymbolKind::Builtin(p)} ))
+        map!(user_symbol, |p| {SymbolKind::User(p)} ))
 );
 
 named!(

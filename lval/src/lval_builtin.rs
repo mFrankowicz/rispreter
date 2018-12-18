@@ -106,14 +106,6 @@ fn modl(lenv: &Lenv, lval: &mut Lval,) -> Lval {
 // TODO: make better errors
 fn op(_lenv: &Lenv, lval: &mut Lval, op: char) -> Lval {
 
-    // for lnums in lval.cell.iter() {
-    //     if let LvalType::LVAL_NUM(_n) = lnums.ltype {
-    //         continue;
-    //     } else {
-    //         return Lval::lval_err("Can't operate on non-number!".to_string());
-    //     }
-    // }
-    
     let mut x = lval.lval_pop().unwrap();
     let iter = lval.cell.clone();
     for _i in iter.iter() {
@@ -145,12 +137,14 @@ fn op(_lenv: &Lenv, lval: &mut Lval, op: char) -> Lval {
 }
 
 fn head(_lenv: &Lenv, lval: &mut Lval) -> Lval {
-    let head = lval.lval_pop().unwrap();
+    let mut qexpr = lval.lval_pop().unwrap();
+    let head = qexpr.lval_pop().unwrap();
     head
 }
 
 fn tail(_env: &Lenv, lval: &mut Lval) ->  Lval {
-    let tail = lval.lval_split(1);
+    let mut qexpr = lval.lval_pop().unwrap();
+    let tail = qexpr.lval_split(1);
     tail
 }
 
@@ -169,7 +163,7 @@ fn join(_env: &Lenv, lval: &mut Lval) -> Lval {
 fn cons(_env: &Lenv, lval: &mut Lval) -> Lval {
     let x = lval.lval_pop().unwrap();
     let mut qexpr = lval.lval_pop().unwrap();
-    qexpr.cell.push_back(x);
+    qexpr.cell.push_front(x);
     qexpr
 }
 
@@ -272,6 +266,7 @@ mod tests {
         top = head(&lenv, &mut top);
         println!("{:?}", top);
         assert_eq!(top.ltype, LvalType::LVAL_NUM(1.0));
+        assert_eq!(top.cell.len(), 0);
 
     }
 

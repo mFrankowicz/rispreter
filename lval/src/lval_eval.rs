@@ -84,6 +84,7 @@ pub mod tests {
 
     #[test]
     /// (+ 1 1)
+    /// 2
     fn test_lval_sexpr() {
         let mut env = Lenv::new();
         Lbuiltin::add_builtins(&mut env);
@@ -99,6 +100,7 @@ pub mod tests {
 
     #[test]
     /// (+ 1 (+ 2 3))
+    /// 6
     fn test_lval_sexpr_with_sexpr() {
         let mut env = Lenv::new();
         Lbuiltin::add_builtins(&mut env);
@@ -114,5 +116,24 @@ pub mod tests {
         top.add_cell(first).add_cell(second).add_cell(third);
         let res = lval_eval(&env, &mut top);
         assert_eq!(res.ltype, LvalType::LVAL_NUM(6.0));
+    }
+
+    #[test]
+    /// (head {1 2 3})
+    /// 1
+    fn head_expr() {
+        let mut env = Lenv::new();
+        Lbuiltin::add_builtins(&mut env);
+
+        let mut top = Lval::lval_sexpr();
+        let head = Lval::lval_sym("head".to_string());
+        let mut qexpr = Lval::lval_qexpr();
+        let a = Lval::lval_num(1.0);
+        let b = Lval::lval_num(2.0);
+        let c = Lval::lval_num(3.0);
+        qexpr.add_cell(a).add_cell(b).add_cell(c);
+        top.add_cell(head).add_cell(qexpr);
+        let res = lval_eval(&env, &mut top);
+        assert_eq!(res.ltype, LvalType::LVAL_NUM(1.0));
     }
 }
