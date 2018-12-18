@@ -5,10 +5,10 @@ use std::collections::VecDeque;
 #[allow(non_camel_case_types)] // please
 #[derive(PartialEq, Debug, Clone)]
 pub enum LvalType {
-    LVAL_ERR,
-    LVAL_NUM,
-    LVAL_SYM,
-    LVAL_FUN,
+    LVAL_ERR(String),
+    LVAL_NUM(f64),
+    LVAL_SYM(String),
+    LVAL_FUN(Lbuiltin),
     LVAL_SEXPR,
     LVAL_QEXPR,
 }
@@ -16,10 +16,6 @@ pub enum LvalType {
 #[derive(PartialEq, Debug, Clone)]
 pub struct Lval {
     pub ltype: LvalType,
-    pub num: f64,
-    pub err: String,
-    pub sym: String,
-    pub fun: Option<Lbuiltin>,
     pub cell: VecDeque<Lval>,
 }
 
@@ -33,33 +29,21 @@ impl Lval {
 
     pub fn lval_num(num: f64) -> Lval {
         Lval {
-            ltype: LvalType::LVAL_NUM,
-            num: num,
-            err: String::new(),
-            sym: String::new(),
-            fun: None,
+            ltype: LvalType::LVAL_NUM(num),
             cell: VecDeque::new(),
         }
     }
 
     pub fn lval_err(err: String) -> Lval {
         Lval {
-            ltype: LvalType::LVAL_ERR,
-            num: 0.0,
-            err: err,
-            sym: String::new(),
-            fun: None,
+            ltype: LvalType::LVAL_ERR(err),
             cell: VecDeque::new(),
         }
     }
 
     pub fn lval_sym(sym: String) -> Lval {
         Lval {
-            ltype: LvalType::LVAL_SYM,
-            num: 0.0,
-            err: String::new(),
-            sym: sym,
-            fun: None,
+            ltype: LvalType::LVAL_SYM(sym),
             cell: VecDeque::new(),
         }
     }
@@ -67,10 +51,6 @@ impl Lval {
     pub fn lval_sexpr() -> Lval {
         Lval {
             ltype: LvalType::LVAL_SEXPR,
-            num: 0.0,
-            err: String::new(),
-            sym: String::new(),
-            fun: None,
             cell: VecDeque::new(),
         }
     }
@@ -78,21 +58,13 @@ impl Lval {
     pub fn lval_qexpr() -> Lval {
         Lval {
             ltype: LvalType::LVAL_QEXPR,
-            num: 0.0,
-            err: String::new(),
-            sym: String::new(),
-            fun: None,
             cell: VecDeque::new(),
         }
     }
 
     pub fn lval_fun(func: Lbuiltin) -> Lval {
-        Lval { 
-            ltype: LvalType::LVAL_FUN,
-            num: 0.0,
-            err: String::new(),
-            sym: String::new(),
-            fun: Some(func),
+        Lval {
+            ltype: LvalType::LVAL_FUN(func),
             cell: VecDeque::new(),
         }
     }
@@ -140,7 +112,7 @@ impl Lenv {
 
     pub fn add_builtin(&mut self, name: &str, func: Lbuiltin) {
         let lval = Lval::lval_fun(func);
-        self.vals.insert(name.to_string(), lval);    
+        self.vals.insert(name.to_string(), lval);
     }
 
     pub fn get(&self, k: &String) -> Option<&Lval> {
@@ -155,16 +127,13 @@ pub mod tests {
     #[test]
     fn create_lval_type() {
         let lval = Lval::lval_err("err".to_string());
-        assert_eq!(lval.ltype, LvalType::LVAL_ERR);
-        assert_eq!(lval.err, "err".to_string());
+        assert_eq!(lval.ltype, LvalType::LVAL_ERR("err".to_string()));
 
         let lval = Lval::lval_num(1.0);
-        assert_eq!(lval.ltype, LvalType::LVAL_NUM);
-        assert_eq!(lval.num, 1.0);
+        assert_eq!(lval.ltype, LvalType::LVAL_NUM(1.0));
 
         let lval = Lval::lval_sym("sym".to_string());
-        assert_eq!(lval.ltype, LvalType::LVAL_SYM);
-        assert_eq!(lval.sym, "sym".to_string());
+        assert_eq!(lval.ltype, LvalType::LVAL_SYM("sym".to_string()));
 
         let lval = Lval::lval_sexpr();
         assert_eq!(lval.ltype, LvalType::LVAL_SEXPR);

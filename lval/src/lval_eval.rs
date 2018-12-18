@@ -1,15 +1,15 @@
 use crate::lval_def::*;
 
 pub fn lval_eval(lenv: &Lenv, lval: &mut Lval) -> Lval {
-    match lval.ltype {
-        LvalType::LVAL_SYM => {
-            let x = lenv.get(&lval.sym);
+    match &lval.ltype {
+        LvalType::LVAL_SYM(sym) => {
+            let x = lenv.get(&sym);
             match x {
                 Some(v) => {
                     return v.clone();
                 },
                 None => {
-                    return Lval::lval_err(format!("Can't find {:?}", lval.sym));
+                    return Lval::lval_err(format!("Can't find {:?}", sym));
                 }
             }
         },
@@ -23,26 +23,38 @@ pub fn lval_eval(lenv: &Lenv, lval: &mut Lval) -> Lval {
 }
 
 pub fn lval_eval_sexpr(lenv: &Lenv, lval: &mut Lval) -> Lval {
-    
+
     for i in 0..lval.cell.len() {
         lval.cell[i] = lval_eval(lenv, &mut lval.cell[i]);
     }
 
+
     for i in 0..lval.cell.len() {
-        if lval.cell[i].ltype == LvalType::LVAL_ERR {
-            return lval.lval_take(i);
+        if let LvalType::LVAL_ERR(_err) = &lval.cell[i].ltype {
+            return lval.lval_take(i)
+        } else {
+            continue;
         }
+
+        // match lval.cell[i].ltype  {
+        //     LvalType::LVAL_ERR(_err) => {
+        //         return lval.lval_take(i)
+        //     },
+        //     _ => {
+        //         continue;
+        //     }
+        // }
     }
 
     if lval.cell.len() == 0 { return lval.clone(); }
     if lval.cell.len() == 1 { return lval.lval_take(0); }
 
     let f = lval.lval_pop().unwrap();
-    if f.ltype != LvalType::LVAL_FUN {
-        return Lval::lval_err("First element is not a function!".to_string());
+    if let LvalType::LVAL_FUN(fun) = &f.ltype {
+        fun.clone().0(lenv, lval)
+    } else {
+        Lval::lval_err("First element is not a function!".to_string())
     }
-
-    f.fun.clone().unwrap().0(lenv, lval)
 }
 
 #[cfg(test)]
@@ -82,7 +94,7 @@ pub mod tests {
         let third = Lval::lval_num(1.0);
         top.add_cell(first).add_cell(second).add_cell(third);
         let res = lval_eval(&env, &mut top);
-        assert_eq!(res.num, 2.0);
+        assert_eq!(res.ltype, LvalType::LVAL_NUM(2.0));
     }
 
     #[test]
@@ -101,6 +113,6 @@ pub mod tests {
         third.add_cell(third_one).add_cell(third_two).add_cell(third_three);
         top.add_cell(first).add_cell(second).add_cell(third);
         let res = lval_eval(&env, &mut top);
-        assert_eq!(res.num, 6.0);
+        assert_eq!(res.ltype, LvalType::LVAL_NUM(6.0));
     }
 }
