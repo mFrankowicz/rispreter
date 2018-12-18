@@ -103,24 +103,17 @@ fn modl(lenv: &Lenv, lval: &mut Lval,) -> Lval {
     op(lenv, lval, '%')
 }
 
-
+// TODO: make better errors
 fn op(_lenv: &Lenv, lval: &mut Lval, op: char) -> Lval {
 
-    for lnums in lval.cell.iter() {
-        if let LvalType::LVAL_NUM(_n) = lnums.ltype {
-            continue;
-        } else {
-            return Lval::lval_err("Can't operate on non-number!".to_string());
-        }
-        // match lnums.ltype {
-        //     LvalType::LVAL_NUM(_n) => {
-        //         continue;
-        //     }
-        //     _ => {
-        //         return Lval::lval_err("Can't operate on non-number!".to_string());
-        //     }
-        // }
-    }
+    // for lnums in lval.cell.iter() {
+    //     if let LvalType::LVAL_NUM(_n) = lnums.ltype {
+    //         continue;
+    //     } else {
+    //         return Lval::lval_err("Can't operate on non-number!".to_string());
+    //     }
+    // }
+    
     let mut x = lval.lval_pop().unwrap();
     let iter = lval.cell.clone();
     for _i in iter.iter() {
@@ -141,7 +134,11 @@ fn op(_lenv: &Lenv, lval: &mut Lval, op: char) -> Lval {
                     '%' => { *xn = (*xn as i64 % yn as i64) as f64; },
                     _ => { }
                 }
+            } else {
+                return Lval::lval_err(format!("Can't operate in a non number! Got {:?} expect LvalType::LVAL_NUM", y.ltype));
             }
+        } else {
+            return Lval::lval_err(format!("Can't operate in a non number! Got {:?} expect LvalType::LVAL_NUM", x.ltype));
         }
     }
     x
@@ -203,7 +200,6 @@ mod tests {
         println!("{:?}", top);
         assert_eq!(top.cell.len(), 0);
         assert_eq!(top.ltype, LvalType::LVAL_NUM(6.0));
-        //assert_eq!(top.num, 6.0);
     }
 
     #[test]
@@ -223,7 +219,6 @@ mod tests {
         println!("{:?}", top);
         assert_eq!(top.cell.len(), 0);
         assert_eq!(top.ltype, LvalType::LVAL_NUM(1.0));
-        //assert_eq!(top.num, 1.0);
     }
 
     #[test]
@@ -243,7 +238,6 @@ mod tests {
         println!("{:?}", top);
         assert_eq!(top.cell.len(), 0);
         assert_eq!(top.ltype, LvalType::LVAL_NUM(8.0));
-        //assert_eq!(top.num, 8.0);
     }
 
     #[test]
@@ -263,7 +257,6 @@ mod tests {
         println!("{:?}", top);
         assert_eq!(top.cell.len(), 0);
         assert_eq!(top.ltype, LvalType::LVAL_NUM(0.9));
-        //assert_eq!(top.num, 0.9);
     }
 
     #[test]
@@ -279,7 +272,6 @@ mod tests {
         top = head(&lenv, &mut top);
         println!("{:?}", top);
         assert_eq!(top.ltype, LvalType::LVAL_NUM(1.0));
-        //assert_eq!(top.num, 1.0);
 
     }
 
@@ -355,10 +347,7 @@ mod tests {
 
         sub.add_cell(one).add_cell(two).add_cell(three);
         top.add_cell(sub);
-        //println!("{:?}", top);
         top = eval(&lenv, &mut top);
-        //println!("{:?}", top);
         assert_eq!(top.ltype, LvalType::LVAL_NUM(3.0));
-        //assert_eq!(top.num, 3.0);
     }
 }
