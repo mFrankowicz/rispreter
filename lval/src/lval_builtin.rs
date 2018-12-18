@@ -4,7 +4,6 @@ use crate::lval_eval;
 pub struct Lbuiltin(pub fn(lenv: &Lenv, lval: &mut Lval) -> Lval);
 
 impl Lbuiltin {
-
     pub fn add_builtins(lenv: &mut Lenv) {
         lenv.add_builtin("+", Lbuiltin::lbuiltin_add());
         lenv.add_builtin("-", Lbuiltin::lbuiltin_sub());

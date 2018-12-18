@@ -20,7 +20,7 @@ fn main() -> io::Result<()>{
     interface.set_prompt("risp> ")?;
 
     while let ReadResult::Input(line) = interface.read_line()? {
-        println!("read input: {:?}", lval_eval(&lenv, &mut read(parse_risp(line.as_bytes()))));
+        println!("read input: {}", lval_eval(&lenv, &mut read(parse_risp(line.as_bytes()))));
 
         if !line.trim().is_empty() {
             interface.add_history_unique(line);

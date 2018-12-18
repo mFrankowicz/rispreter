@@ -37,7 +37,7 @@ impl fmt::Display for LvalType {
                 write!(f, "()")
             },
             LvalType::LVAL_QEXPR => {
-                write!(f, "{}", "{}")
+                write!(f, "{{}}")
             }
         }
     }
@@ -47,12 +47,6 @@ impl fmt::Display for LvalType {
 pub struct Lval {
     pub ltype: LvalType,
     pub cell: VecDeque<Box<Lval>>,
-}
-
-impl Drop for Lval {
-    fn drop(&mut self) {
-        self.cell.clear();
-    }
 }
 
 impl Lval {
@@ -128,6 +122,38 @@ impl Lval {
 
     pub fn lval_join(&mut self, other: &mut Lval) {
         self.cell.append(&mut other.cell);
+    }
+}
+
+impl fmt::Display for Lval {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self.ltype {
+            LvalType::LVAL_SEXPR => {
+                if self.cell.len() == 0 {
+                    write!(f, "{}", self.ltype)
+                } else {
+                    write!(f, "(")?;
+                    for elem in self.cell.iter() {
+                        write!(f, " {} ", elem.ltype)?;
+                    };
+                    write!(f, ")")
+                }
+            },
+            LvalType::LVAL_QEXPR => {
+                if self.cell.len() == 0 {
+                    write!(f, "{}", self.ltype)
+                } else {
+                    write!(f, "{{")?;
+                    for elem in self.cell.iter() {
+                        write!(f, " {} ", elem.ltype)?;
+                    };
+                    write!(f, "}}")
+                }
+            },
+            _ => {
+                write!(f, "{}", self.ltype)
+            }
+        }
     }
 }
 
