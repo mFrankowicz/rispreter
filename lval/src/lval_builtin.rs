@@ -256,35 +256,56 @@ mod tests {
     #[test]
     fn lbuiltin_head() {
         let lenv = Lenv::new();
-        let mut top = Lval::lval_qexpr();
-        let one = Lval::lval_num(1.0);
-        let two = Lval::lval_num(2.0);
-        let three = Lval::lval_num(3.0);
-        top.add_cell(one).add_cell(two).add_cell(three);
-        assert_eq!(top.ltype, LvalType::LVAL_QEXPR);
-        println!("{:?}", top);
+        let mut top = Lval::lval_sexpr();
+        let head_op = Lval::lval_sym("head".to_string());
+        let mut qexpr = Lval::lval_qexpr();
+        let a = Lval::lval_num(1.0);
+        let b = Lval::lval_num(2.0);
+        let c = Lval::lval_num(3.0);
+        qexpr.add_cell(a).add_cell(b).add_cell(c);
+        top.add_cell(head_op).add_cell(qexpr);
+        top.lval_pop();
         top = head(&lenv, &mut top);
-        println!("{:?}", top);
         assert_eq!(top.ltype, LvalType::LVAL_NUM(1.0));
-        assert_eq!(top.cell.len(), 0);
-
     }
 
     #[test]
     fn lbuiltin_tail() {
         let lenv = Lenv::new();
-        let mut top = Lval::lval_qexpr();
-        let one = Lval::lval_num(1.0);
-        let two = Lval::lval_num(2.0);
-        let three = Lval::lval_num(3.0);
-        top.add_cell(one).add_cell(two).add_cell(three);
-        assert_eq!(top.ltype, LvalType::LVAL_QEXPR);
-        println!("{:?}", top);
+        let mut top = Lval::lval_sexpr();
+        let head_op = Lval::lval_sym("head".to_string());
+        let mut qexpr = Lval::lval_qexpr();
+        let a = Lval::lval_num(1.0);
+        let b = Lval::lval_num(2.0);
+        let c = Lval::lval_num(3.0);
+        qexpr.add_cell(a).add_cell(b).add_cell(c);
+        top.add_cell(head_op).add_cell(qexpr);
+        top.lval_pop();
         top = tail(&lenv, &mut top);
-        println!("{:?}", top);
         assert_eq!(top.ltype, LvalType::LVAL_QEXPR);
-        assert_eq!(top.cell.len(), 2);
         assert_eq!(top.cell[0].ltype, LvalType::LVAL_NUM(2.0));
+        assert_eq!(top.cell[1].ltype, LvalType::LVAL_NUM(3.0));
+    }
+
+    #[test]
+    fn lbuiltin_cons() {
+        let lenv = Lenv::new();
+        let mut top = Lval::lval_sexpr();
+        let head_op = Lval::lval_sym("cons".to_string());
+        let to_be_consed = Lval::lval_num(1.0);
+
+        let mut qexpr = Lval::lval_qexpr();
+        let a = Lval::lval_num(2.0);
+        let b = Lval::lval_num(3.0);
+        qexpr.add_cell(a).add_cell(b);
+
+        top.add_cell(head_op).add_cell(to_be_consed).add_cell(qexpr);
+        top.lval_pop();
+        top = cons(&lenv, &mut top);
+        assert_eq!(top.ltype, LvalType::LVAL_QEXPR);
+        assert_eq!(top.cell[0].ltype, LvalType::LVAL_NUM(1.0));
+        assert_eq!(top.cell[1].ltype, LvalType::LVAL_NUM(2.0));
+        assert_eq!(top.cell[2].ltype, LvalType::LVAL_NUM(3.0));
     }
 
     #[test]
