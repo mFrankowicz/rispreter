@@ -25,7 +25,7 @@ pub fn lval_eval(lenv: &Lenv, lval: &mut Lval) -> Lval {
 pub fn lval_eval_sexpr(lenv: &Lenv, lval: &mut Lval) -> Lval {
 
     for i in 0..lval.cell.len() {
-        lval.cell[i] = lval_eval(lenv, &mut lval.cell[i]);
+        lval.cell[i] = Box::new(lval_eval(lenv, &mut lval.cell[i]));
     }
 
 
@@ -49,7 +49,7 @@ pub fn lval_eval_sexpr(lenv: &Lenv, lval: &mut Lval) -> Lval {
     if lval.cell.len() == 0 { return lval.clone(); }
     if lval.cell.len() == 1 { return lval.lval_take(0); }
 
-    let f = lval.lval_pop().unwrap();
+    let f = lval.lval_pop();
     if let LvalType::LVAL_FUN(fun) = &f.ltype {
         fun.clone().0(lenv, lval)
     } else {

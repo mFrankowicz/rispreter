@@ -1,6 +1,7 @@
 use crate::lval_builtin::*;
 use std::collections::HashMap;
 use std::collections::VecDeque;
+use std::fmt;
 
 #[allow(non_camel_case_types)] // please
 #[derive(PartialEq, Debug, Clone)]
@@ -9,14 +10,43 @@ pub enum LvalType {
     LVAL_NUM(f64),
     LVAL_SYM(String),
     LVAL_FUN(Lbuiltin),
+    LVAL_STRING(String),
     LVAL_SEXPR,
     LVAL_QEXPR,
+}
+
+impl fmt::Display for LvalType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            LvalType::LVAL_ERR(err) => {
+                write!(f, "error: \"{}\"", err)
+            },
+            LvalType::LVAL_NUM(num) => {
+                write!(f, "{}", num)
+            },
+            LvalType::LVAL_SYM(sym) => {
+                write!(f, "{}", sym)
+            },
+            LvalType::LVAL_STRING(str) => {
+                write!(f, "\"{}\"", str)
+            }
+            LvalType::LVAL_FUN(fun) => {
+                write!(f, "{:?}", fun)
+            },
+            LvalType::LVAL_SEXPR => {
+                write!(f, "()")
+            },
+            LvalType::LVAL_QEXPR => {
+                write!(f, "{}", "{}")
+            }
+        }
+    }
 }
 
 #[derive(PartialEq, Debug, Clone)]
 pub struct Lval {
     pub ltype: LvalType,
-    pub cell: VecDeque<Lval>,
+    pub cell: VecDeque<Box<Lval>>,
 }
 
 impl Drop for Lval {
@@ -48,6 +78,13 @@ impl Lval {
         }
     }
 
+    pub fn lval_string(str: String) -> Lval {
+        Lval {
+            ltype: LvalType::LVAL_STRING(str),
+            cell: VecDeque::new(),
+        }
+    }
+
     pub fn lval_sexpr() -> Lval {
         Lval {
             ltype: LvalType::LVAL_SEXPR,
@@ -70,22 +107,18 @@ impl Lval {
     }
 
     pub fn add_cell(&mut self, lval: Lval) -> &mut Self {
-        self.cell.push_back(lval);
+        self.cell.push_back(Box::new(lval));
         self
     }
 
-    pub fn lval_pop(&mut self) -> Option<Lval> {
-        if self.cell.len() > 0 {
-            self.cell.pop_front()
-        } else {
-            None
-        }
+    pub fn lval_pop(&mut self) -> Lval {
+        *self.cell.pop_front().unwrap()
     }
 
     pub fn lval_take(&mut self, index: usize) -> Lval {
         let x = self.cell.remove(index).clone();
         self.cell.clear();
-        x.unwrap()
+        *x.unwrap()
     }
 
     pub fn lval_split(&mut self, index: usize) -> Lval {
@@ -134,6 +167,9 @@ pub mod tests {
 
         let lval = Lval::lval_sym("sym".to_string());
         assert_eq!(lval.ltype, LvalType::LVAL_SYM("sym".to_string()));
+
+        let lval = Lval::lval_string("str".to_string());
+        assert_eq!(lval.ltype, LvalType::LVAL_STRING("str".to_string()));
 
         let lval = Lval::lval_sexpr();
         assert_eq!(lval.ltype, LvalType::LVAL_SEXPR);

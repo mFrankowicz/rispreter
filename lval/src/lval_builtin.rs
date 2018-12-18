@@ -83,6 +83,8 @@ impl std::fmt::Debug for Lbuiltin {
     }
 }
 
+/// builtins
+
 fn add(lenv: &Lenv, lval: &mut Lval,) -> Lval {
     op(lenv, lval, '+')
 }
@@ -106,10 +108,10 @@ fn modl(lenv: &Lenv, lval: &mut Lval,) -> Lval {
 // TODO: make better errors
 fn op(_lenv: &Lenv, lval: &mut Lval, op: char) -> Lval {
 
-    let mut x = lval.lval_pop().unwrap();
+    let mut x = lval.lval_pop();
     let iter = lval.cell.clone();
     for _i in iter.iter() {
-         let y = lval.lval_pop().unwrap();
+         let y = lval.lval_pop();
         if let LvalType::LVAL_NUM(ref mut xn) = x.ltype {
             if let LvalType::LVAL_NUM(yn) = y.ltype {
                 match op {
@@ -137,13 +139,13 @@ fn op(_lenv: &Lenv, lval: &mut Lval, op: char) -> Lval {
 }
 
 fn head(_lenv: &Lenv, lval: &mut Lval) -> Lval {
-    let mut qexpr = lval.lval_pop().unwrap();
-    let head = qexpr.lval_pop().unwrap();
+    let mut qexpr = lval.lval_pop();
+    let head = qexpr.lval_pop();
     head
 }
 
 fn tail(_env: &Lenv, lval: &mut Lval) ->  Lval {
-    let mut qexpr = lval.lval_pop().unwrap();
+    let mut qexpr = lval.lval_pop();
     let tail = qexpr.lval_split(1);
     tail
 }
@@ -154,16 +156,16 @@ fn list(_env: &Lenv, lval: &mut Lval) -> Lval {
 }
 
 fn join(_env: &Lenv, lval: &mut Lval) -> Lval {
-    let mut y = lval.lval_pop().unwrap();
-    let mut x = lval.lval_pop().unwrap();
+    let mut y = lval.lval_pop();
+    let mut x = lval.lval_pop();
     y.cell.append(&mut x.cell);
     y
 }
 
 fn cons(_env: &Lenv, lval: &mut Lval) -> Lval {
-    let x = lval.lval_pop().unwrap();
-    let mut qexpr = lval.lval_pop().unwrap();
-    qexpr.cell.push_front(x);
+    let x = lval.lval_pop();
+    let mut qexpr = lval.lval_pop();
+    qexpr.cell.push_front(Box::new(x));
     qexpr
 }
 
