@@ -6,6 +6,10 @@ use nom::{digit, alphanumeric, multispace, AsChar, anychar};
 use std::str;
 use std::str::FromStr;
 
+extern crate lval;
+
+use lval::lval_def::{Lval, LvalType, Lenv};
+
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub enum NumType {
     Int(i64),

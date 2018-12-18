@@ -207,6 +207,7 @@ dependencies = [
 name = "parse"
 version = "0.1.0"
 dependencies = [
+ "lval 0.1.0",
  "nom 4.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
