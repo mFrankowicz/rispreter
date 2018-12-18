@@ -38,7 +38,10 @@ pub fn read(parsed: Option<Risp>) -> Lval {
                             Lval::lval_err("prelude not implemented yet".to_string())
                         }
                     }
-                }
+                },
+                Risp::LString(str) => {
+                    Lval::lval_string(str)
+                },
                 _ => {
                     Lval::lval_err("incomplete".to_string())
                 }
