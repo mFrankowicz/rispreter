@@ -96,36 +96,91 @@ impl std::fmt::Debug for Lbuiltin {
 
 // builtins
 
-/// Add N arguments
+/// Add n arguments
+/// # Examples
 /// ```
-/// extern crate rispreter_repl;
-/// use rispreter_repl::rispreter;
-/// # let mut builtins = Lenv::new();
-/// # Lbuiltin::add_builtins(&mut builtins);
-/// let res = rispreter(builtins, "(+ 1 2)");
-/// assert_eq!(3, res);
+/// # use rispreter_repl::eval::eval_rispreter;
+/// # use rispreter_repl::lval::lval_builtin::*;
+/// # use rispreter_repl::lval::lval_def::*;
+/// let mut builtins = Lenv::new();
+/// Lbuiltin::add_builtins(&mut builtins);
+///
+/// let res = eval_rispreter(&mut builtins, "(+ 1 2)".to_string());
+/// assert_eq!(3f64, res);
 /// ```
 fn add(lenv: &mut Lenv, lval: &mut Lval,) -> Lval {
     op(lenv, lval, '+')
 }
 
+/// Subtracts n arguments
+/// # Examples
+/// ```
+/// # use rispreter_repl::eval::eval_rispreter;
+/// # use rispreter_repl::lval::lval_builtin::*;
+/// # use rispreter_repl::lval::lval_def::*;
+/// let mut builtins = Lenv::new();
+/// Lbuiltin::add_builtins(&mut builtins);
+///
+/// let res = eval_rispreter(&mut builtins, "(- 3 2)".to_string());
+/// assert_eq!(1f64, res);
+/// ```
 fn sub(lenv: &mut Lenv, lval: &mut Lval,) -> Lval {
     op(lenv, lval, '-')
 }
 
+/// Multiply n arguments
+/// # Examples
+/// ```
+/// # use rispreter_repl::eval::eval_rispreter;
+/// # use rispreter_repl::lval::lval_builtin::*;
+/// # use rispreter_repl::lval::lval_def::*;
+/// let mut builtins = Lenv::new();
+/// Lbuiltin::add_builtins(&mut builtins);
+///
+/// let res = eval_rispreter(&mut builtins, "(* 2 3)".to_string());
+/// assert_eq!(6f64, res);
+/// ```
 fn mul(lenv: &mut Lenv, lval: &mut Lval,) -> Lval {
     op(lenv, lval, '*')
 }
 
+/// Divides n arguments
+/// returns a `LvalType::LVAL_ERR("Division by zero")` if trying to divides by 0
+/// # Examples
+/// ```
+/// # use rispreter_repl::eval::eval_rispreter;
+/// # use rispreter_repl::lval::lval_builtin::*;
+/// # use rispreter_repl::lval::lval_def::*;
+/// let mut builtins = Lenv::new();
+/// Lbuiltin::add_builtins(&mut builtins);
+///
+/// let res = eval_rispreter(&mut builtins, "(/ 4 2)".to_string());
+/// assert_eq!(2f64, res);
+///
+/// let res = eval_rispreter(&mut builtins, "(/ 3 0)".to_string());
+/// assert_eq!(Lval::lval_err("Division by Zero".to_string()), res);
+/// ```
 fn div(lenv: &mut Lenv, lval: &mut Lval,) -> Lval {
     op(lenv, lval, '/')
 }
 
+/// Modulo operand of n arguments
+/// # Examples
+/// ```
+/// # use rispreter_repl::eval::eval_rispreter;
+/// # use rispreter_repl::lval::lval_builtin::*;
+/// # use rispreter_repl::lval::lval_def::*;
+/// let mut builtins = Lenv::new();
+/// Lbuiltin::add_builtins(&mut builtins);
+///
+/// let res = eval_rispreter(&mut builtins, "(% 13 7 5)".to_string());
+/// assert_eq!(1f64, res);
+/// ```
 fn modl(lenv: &mut Lenv, lval: &mut Lval,) -> Lval {
     op(lenv, lval, '%')
 }
 
-// TODO: make better errors
+/// Common fn for arith functions
 fn op(_lenv: &mut Lenv, lval: &mut Lval, op: char) -> Lval {
 
     let mut x = lval.lval_pop();
@@ -158,6 +213,18 @@ fn op(_lenv: &mut Lenv, lval: &mut Lval, op: char) -> Lval {
     x
 }
 
+/// Take the head of a Q-expression
+/// # Examples
+/// ```
+/// # use rispreter_repl::eval::eval_rispreter;
+/// # use rispreter_repl::lval::lval_builtin::*;
+/// # use rispreter_repl::lval::lval_def::*;
+/// let mut builtins = Lenv::new();
+/// Lbuiltin::add_builtins(&mut builtins);
+///
+/// let res = eval_rispreter(&mut builtins, "(head {1 2 3})".to_string());
+/// assert_eq!(1f64, res);
+/// ```
 fn head(_lenv: &mut Lenv, lval: &mut Lval) -> Lval {
     if lval.cell.len() > 1 {
         return Lval::lval_error_argssize(lval.cell.len(), 1)
@@ -176,6 +243,18 @@ fn head(_lenv: &mut Lenv, lval: &mut Lval) -> Lval {
     head
 }
 
+/// Take the tail (all but first) of a Q-expression
+/// # Examples
+/// ```
+/// # use rispreter_repl::eval::eval_rispreter;
+/// # use rispreter_repl::lval::lval_builtin::*;
+/// # use rispreter_repl::lval::lval_def::*;
+/// let mut builtins = Lenv::new();
+/// Lbuiltin::add_builtins(&mut builtins);
+///
+/// let head_of_tail = eval_rispreter(&mut builtins, "(head (tail {1 2 3}))".to_string());
+/// assert_eq!(2f64, head_of_tail);
+/// ```
 fn tail(_env: &mut Lenv, lval: &mut Lval) ->  Lval {
     if lval.cell.len() > 1 {
         return Lval::lval_error_argssize(lval.cell.len(), 1)
@@ -195,15 +274,37 @@ fn tail(_env: &mut Lenv, lval: &mut Lval) ->  Lval {
     tail
 }
 
+/// Transform all following arguments in a Q-expression
+/// # Examples
+/// ```
+/// # use rispreter_repl::eval::eval_rispreter;
+/// # use rispreter_repl::lval::lval_builtin::*;
+/// # use rispreter_repl::lval::lval_def::*;
+/// let mut builtins = Lenv::new();
+/// Lbuiltin::add_builtins(&mut builtins);
+///
+/// let res = eval_rispreter(&mut builtins, "(head (list 1 2 3))".to_string());
+/// assert_eq!(1f64, res);
+/// ```
 fn list(_env: &mut Lenv, lval: &mut Lval) -> Lval {
     lval.ltype = LvalType::LVAL_QEXPR;
     lval.clone()
 }
 
+/// Joins two Q-expressions, where the first is joined in the left side of the second
+/// # Examples
+/// ```
+/// # use rispreter_repl::eval::eval_rispreter;
+/// # use rispreter_repl::lval::lval_builtin::*;
+/// # use rispreter_repl::lval::lval_def::*;
+/// let mut builtins = Lenv::new();
+/// Lbuiltin::add_builtins(&mut builtins);
+///
+/// let res = eval_rispreter(&mut builtins, "(head (join {1} {2 3}))".to_string());
+/// assert_eq!(1f64, res);
+/// ```
 fn join(_env: &mut Lenv, lval: &mut Lval) -> Lval {
-    if lval.cell.len() > 2 {
-        return Lval::lval_error_argssize(lval.cell.len(), 2)
-    } else if lval.cell.len() == 1 {
+    if lval.cell.len() != 2 {
         return Lval::lval_error_argssize(lval.cell.len(), 2)
     }
     if lval.cell[0].ltype != LvalType::LVAL_QEXPR {
@@ -222,12 +323,26 @@ fn join(_env: &mut Lenv, lval: &mut Lval) -> Lval {
          return Lval::lval_error_empty_qexpr()
     }
 
-
     y.cell.append(&mut x.cell);
     y
 }
 
+/// The classic cons, put a element in a Q-expression
+/// # Examples
+/// ```
+/// # use rispreter_repl::eval::eval_rispreter;
+/// # use rispreter_repl::lval::lval_builtin::*;
+/// # use rispreter_repl::lval::lval_def::*;
+/// let mut builtins = Lenv::new();
+/// Lbuiltin::add_builtins(&mut builtins);
+///
+/// let res = eval_rispreter(&mut builtins, "(head (cons 1 {2 3}))".to_string());
+/// assert_eq!(1f64, res);
+/// ```
 fn cons(_env: &mut Lenv, lval: &mut Lval) -> Lval {
+    if lval.cell.len() != 2 {
+        return Lval::lval_error_argssize(lval.cell.len(), 2)
+    }
     if lval.cell[1].ltype != LvalType::LVAL_QEXPR {
         return Lval::lval_error_type(lval.cell[1].ltype.clone(), LvalType::LVAL_QEXPR)
     }
@@ -237,16 +352,58 @@ fn cons(_env: &mut Lenv, lval: &mut Lval) -> Lval {
     qexpr
 }
 
+/// Evaluates a Q-expression, basicaly it transforms a Q-expr into a S-expr
+/// # Examples
+/// ```
+/// # use rispreter_repl::eval::eval_rispreter;
+/// # use rispreter_repl::lval::lval_builtin::*;
+/// # use rispreter_repl::lval::lval_def::*;
+/// let mut builtins = Lenv::new();
+/// Lbuiltin::add_builtins(&mut builtins);
+///
+/// let res = eval_rispreter(&mut builtins, "(eval {+ 1 2 3})".to_string());
+/// assert_eq!(6f64, res);
+/// ```
 fn eval(env: &mut Lenv, lval: &mut Lval) -> Lval {
+    if lval.cell.len() == 0 || lval.cell.len() > 1 {
+        return Lval::lval_error_argssize(lval.cell.len(), 1)
+    }
+    if lval.cell[0].ltype != LvalType::LVAL_QEXPR {
+        return Lval::lval_error_type(lval.cell[0].ltype.clone(), LvalType::LVAL_QEXPR)
+    }
+
     let mut x = lval.lval_take(0);
     x.ltype = LvalType::LVAL_SEXPR;
     lval_eval::lval_eval(env, &mut x)
 }
 
+/// Binds the n symbols of an Q-expression in its followings bindings.
+/// # Examples
+/// ```
+/// # use rispreter_repl::eval::eval_rispreter;
+/// # use rispreter_repl::lval::lval_builtin::*;
+/// # use rispreter_repl::lval::lval_def::*;
+/// let mut builtins = Lenv::new();
+/// Lbuiltin::add_builtins(&mut builtins);
+///
+/// eval_rispreter(&mut builtins, "(def {x} {1 2 3})".to_string());
+/// let res = eval_rispreter(&mut builtins, "(head x)".to_string());
+/// assert_eq!(1f64, res);
+/// ```
 fn def(env: &mut Lenv, lval: &mut Lval) -> Lval {
     if lval.cell[0].cell.len() == 0 {
         return Lval::lval_error_empty_qexpr()
     }
+    let left_len = lval.cell[0].cell.len();
+    let mut right_len = 0;
+    for _ in 1..lval.cell.len() {
+        right_len+=1;
+    }
+    if left_len != right_len {
+        return Lval::lval_err(format!("'def' expects a equal number of bindings. Got left: {} right: {}, expects left: {} right: {}",
+                                    left_len, right_len, left_len, left_len))
+    }
+
     for cell in lval.cell[0].cell.clone() {
         match cell.ltype {
             LvalType::LVAL_SYM(_sym) => {continue;},
@@ -257,8 +414,7 @@ fn def(env: &mut Lenv, lval: &mut Lval) -> Lval {
     }
 
     let symbols_list = lval.lval_pop();
-    // TODO: ensure all elements are symbols
-    // TODO: check equal number of assigns eg: {a b} 1 2, {a b c} 1 2 3, etc
+
     for i in 0..symbols_list.cell.len() {
         if let LvalType::LVAL_SYM(str) = &symbols_list.cell[i].ltype {
             env.put(str.to_string(), lval.cell[i].clone());

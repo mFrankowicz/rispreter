@@ -197,6 +197,17 @@ impl From<Lval> for Option<f64> {
     }
 }
 
+impl PartialEq<Lval> for f64 {
+    fn eq(&self, other: &Lval) -> bool {
+        match other.ltype {
+            LvalType::LVAL_NUM(ref num) => {
+                self == num
+            },
+            _ => false
+        }
+    }
+}
+
 #[derive(PartialEq, Debug, Clone)]
 pub struct Lenv {
     vals: HashMap<String, Box<Lval>>,
