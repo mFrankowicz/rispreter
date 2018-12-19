@@ -1,7 +1,8 @@
 [package]
-name = "rispreter-lval"
+name = "rispreter-parser"
 version = "0.1.0"
 authors = ["Marcos Frankowicz <marcosfrankowicz@gmail.com>"]
 edition = "2018"
 
 [dependencies]
+nom = "4.1.1"

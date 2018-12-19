@@ -1,9 +1,0 @@
-[package]
-name = "rispreter-parse-read"
-version = "0.1.0"
-authors = ["Marcos Frankowicz <marcosfrankowicz@gmail.com>"]
-edition = "2018"
-
-[dependencies]
-nom = "4.1.1"
-rispreter-lval = {path = "../rispreter-lval"}

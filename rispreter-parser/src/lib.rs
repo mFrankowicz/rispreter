@@ -1,3 +1,6 @@
+#[macro_use]
+extern crate nom;
+
 use nom::{digit, alphanumeric, multispace, AsChar, anychar};
 
 use std::str;
@@ -251,7 +254,7 @@ named!(
 
 pub fn parse_risp(input: &[u8]) -> Option<Risp> {
     let val = lval(input);
-    println!("Got parse! {:?}", val);
+    // println!("Got parse: {:?}", val);
     match val {
         Ok(v) => Some(v.1),
         Err(e) => Some(Risp::LSyntaxErr(format!("{:?}", e))),

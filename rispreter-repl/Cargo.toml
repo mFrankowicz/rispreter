@@ -6,5 +6,7 @@ edition = "2018"
 
 [dependencies]
 linefeed = "0.5.4"
-rispreter-parse-read = {path = "../rispreter-parse-read"}
-rispreter-lval = {path = "../rispreter-lval"}
+rispreter-parser= {path = "../rispreter-parser"}
+
+[[bin]]
+name = "rispreter"

@@ -1,5 +1,5 @@
-use crate::lval_def::*;
-use crate::lval_eval;
+use crate::lval::lval_def::*;
+use crate::lval::lval_eval;
 
 pub struct Lbuiltin(pub fn(lenv: &mut Lenv, lval: &mut Lval) -> Lval);
 
@@ -94,8 +94,17 @@ impl std::fmt::Debug for Lbuiltin {
     }
 }
 
-/// builtins
+// builtins
 
+/// Add N arguments
+/// ```
+/// extern crate rispreter_repl;
+/// use rispreter_repl::rispreter;
+/// # let mut builtins = Lenv::new();
+/// # Lbuiltin::add_builtins(&mut builtins);
+/// let res = rispreter(builtins, "(+ 1 2)");
+/// assert_eq!(3, res);
+/// ```
 fn add(lenv: &mut Lenv, lval: &mut Lval,) -> Lval {
     op(lenv, lval, '+')
 }
@@ -150,13 +159,38 @@ fn op(_lenv: &mut Lenv, lval: &mut Lval, op: char) -> Lval {
 }
 
 fn head(_lenv: &mut Lenv, lval: &mut Lval) -> Lval {
+    if lval.cell.len() > 1 {
+        return Lval::lval_error_argssize(lval.cell.len(), 1)
+    }
+
     let mut qexpr = lval.lval_pop();
+    if qexpr.ltype != LvalType::LVAL_QEXPR {
+        return Lval::lval_error_type(qexpr.ltype, LvalType::LVAL_QEXPR)
+    }
+
+    if qexpr.cell.len() == 0 {
+         return Lval::lval_error_empty_qexpr()
+    }
+
     let head = qexpr.lval_pop();
     head
 }
 
 fn tail(_env: &mut Lenv, lval: &mut Lval) ->  Lval {
+    if lval.cell.len() > 1 {
+        return Lval::lval_error_argssize(lval.cell.len(), 1)
+    }
+
     let mut qexpr = lval.lval_pop();
+    if qexpr.ltype != LvalType::LVAL_QEXPR {
+        return Lval::lval_error_type(qexpr.ltype, LvalType::LVAL_QEXPR)
+    }
+
+
+    if qexpr.cell.len() == 0 {
+         return Lval::lval_error_empty_qexpr()
+    }
+
     let tail = qexpr.lval_split(1);
     tail
 }
@@ -167,13 +201,36 @@ fn list(_env: &mut Lenv, lval: &mut Lval) -> Lval {
 }
 
 fn join(_env: &mut Lenv, lval: &mut Lval) -> Lval {
+    if lval.cell.len() > 2 {
+        return Lval::lval_error_argssize(lval.cell.len(), 2)
+    } else if lval.cell.len() == 1 {
+        return Lval::lval_error_argssize(lval.cell.len(), 2)
+    }
+    if lval.cell[0].ltype != LvalType::LVAL_QEXPR {
+        return Lval::lval_error_type(lval.cell[0].ltype.clone(), LvalType::LVAL_QEXPR)
+    }
+    if lval.cell[1].ltype != LvalType::LVAL_QEXPR {
+        return Lval::lval_error_type(lval.cell[1].ltype.clone(), LvalType::LVAL_QEXPR)
+    }
+
     let mut y = lval.lval_pop();
+    if y.cell.len() == 0 {
+         return Lval::lval_error_empty_qexpr()
+    }
     let mut x = lval.lval_pop();
+    if x.cell.len() == 0 {
+         return Lval::lval_error_empty_qexpr()
+    }
+
+
     y.cell.append(&mut x.cell);
     y
 }
 
 fn cons(_env: &mut Lenv, lval: &mut Lval) -> Lval {
+    if lval.cell[1].ltype != LvalType::LVAL_QEXPR {
+        return Lval::lval_error_type(lval.cell[1].ltype.clone(), LvalType::LVAL_QEXPR)
+    }
     let x = lval.lval_pop();
     let mut qexpr = lval.lval_pop();
     qexpr.cell.push_front(Box::new(x));
@@ -187,6 +244,18 @@ fn eval(env: &mut Lenv, lval: &mut Lval) -> Lval {
 }
 
 fn def(env: &mut Lenv, lval: &mut Lval) -> Lval {
+    if lval.cell[0].cell.len() == 0 {
+        return Lval::lval_error_empty_qexpr()
+    }
+    for cell in lval.cell[0].cell.clone() {
+        match cell.ltype {
+            LvalType::LVAL_SYM(_sym) => {continue;},
+            _=> {
+                return Lval::lval_error_type(cell.ltype, LvalType::LVAL_SYM("symbol".to_string()))
+            }
+        }
+    }
+
     let symbols_list = lval.lval_pop();
     // TODO: ensure all elements are symbols
     // TODO: check equal number of assigns eg: {a b} 1 2, {a b c} 1 2 3, etc

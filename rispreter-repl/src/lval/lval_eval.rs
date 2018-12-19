@@ -1,4 +1,4 @@
-use crate::lval_def::*;
+use crate::lval::lval_def::*;
 
 pub fn lval_eval(lenv: &mut Lenv, lval: &mut Lval) -> Lval {
     match &lval.ltype {
@@ -60,16 +60,16 @@ pub fn lval_eval_sexpr(lenv: &mut Lenv, lval: &mut Lval) -> Lval {
 #[cfg(test)]
 pub mod tests {
     use super::*;
-    use crate::lval_builtin::*;
+    use crate::lval::lval_builtin::*;
     // use crate::lval_def::*;
 
     #[test]
-    /// >>> 1.0
-    /// 1.0
-    /// >>> ()
-    /// ()
-    /// >>> symbol
-    /// symbol
+    ///     risp> 1.0
+    ///     1.0
+    ///     risp> ()
+    ///     ()
+    ///     risp> symbol
+    ///     symbol
     fn test_lval_single() {
         let mut lval = Lval::lval_num(1.0);
         let mut lenv = Lenv::new();
@@ -83,8 +83,8 @@ pub mod tests {
     }
 
     #[test]
-    /// (+ 1 1)
-    /// 2
+    ///     risp> (+ 1 1)
+    ///     2
     fn test_lval_sexpr() {
         let mut env = Lenv::new();
         Lbuiltin::add_builtins(&mut env);
@@ -99,8 +99,8 @@ pub mod tests {
     }
 
     #[test]
-    /// (+ 1 (+ 2 3))
-    /// 6
+    ///     risp> (+ 1 (+ 2 3))
+    ///     6
     fn test_lval_sexpr_with_sexpr() {
         let mut env = Lenv::new();
         Lbuiltin::add_builtins(&mut env);
@@ -119,8 +119,8 @@ pub mod tests {
     }
 
     #[test]
-    /// (head {1 2 3})
-    /// 1
+    ///     risp> (head {1 2 3})
+    ///     1
     fn head_expr() {
         let mut env = Lenv::new();
         Lbuiltin::add_builtins(&mut env);

@@ -1,4 +1,4 @@
-use crate::lval_builtin::*;
+use crate::lval::lval_builtin::*;
 use std::collections::HashMap;
 use std::collections::VecDeque;
 use std::fmt;
@@ -131,6 +131,18 @@ impl Lval {
     pub fn lval_join(&mut self, other: &mut Lval) {
         self.cell.append(&mut other.cell);
     }
+
+    // common errors methods
+    // TODO: needs better error management
+    pub fn lval_error_type(a: LvalType, b: LvalType) -> Lval {
+        Lval::lval_err(format!("Wrong type, got {} expect {}", a, b))
+    }
+    pub fn lval_error_argssize(a: usize, b: usize) -> Lval {
+        Lval::lval_err(format!("Wrong num of args, got {} expect {}", a, b))
+    }
+    pub fn lval_error_empty_qexpr() -> Lval {
+        Lval::lval_err(format!("Q-expression is empty!"))
+    }
 }
 
 impl fmt::Display for Lval {
@@ -142,7 +154,7 @@ impl fmt::Display for Lval {
                 } else {
                     write!(f, "(")?;
                     for elem in self.cell.iter() {
-                        write!(f, " {} ", elem.ltype)?;
+                        write!(f, " {} ", elem)?;
                     };
                     write!(f, ")")
                 }
@@ -153,7 +165,7 @@ impl fmt::Display for Lval {
                 } else {
                     write!(f, "{{")?;
                     for elem in self.cell.iter() {
-                        write!(f, " {} ", elem.ltype)?;
+                        write!(f, " {} ", elem)?;
                     };
                     write!(f, "}}")
                 }
@@ -161,6 +173,26 @@ impl fmt::Display for Lval {
             _ => {
                 write!(f, "{}", self.ltype)
             }
+        }
+    }
+}
+
+impl From<Lval> for Option<String> {
+    fn from(v: Lval) -> Option<String> {
+        match v.ltype {
+            LvalType::LVAL_STRING(str) => Some(str),
+            LvalType::LVAL_SYM(sym) => Some(sym),
+            LvalType::LVAL_ERR(err) => Some(err),
+            _ => None
+        }
+    }
+}
+
+impl From<Lval> for Option<f64> {
+    fn from(v: Lval) -> Option<f64> {
+        match v.ltype {
+            LvalType::LVAL_NUM(num) => Some(num),
+            _ => None
         }
     }
 }
