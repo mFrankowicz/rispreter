@@ -1,7 +1,7 @@
 [workspace]
 
 members = [
-	"lval",
-	"parse_read",
+	"rispreter-lval",
+	"rispreter-parse-read",
 	"rispreter-repl",
 ]

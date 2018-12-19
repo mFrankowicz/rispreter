@@ -1,15 +1,15 @@
 extern crate linefeed;
-extern crate parse_read;
-extern crate lval;
+extern crate rispreter_parse_read;
+extern crate rispreter_lval;
 
 use std::io;
 use linefeed::*;
-use parse_read::read::read;
-use parse_read::parse::parse_risp;
+use rispreter_parse_read::read::read;
+use rispreter_parse_read::parse::parse_risp;
 
-use lval::lval_eval::lval_eval;
-use lval::lval_def::Lenv;
-use lval::lval_builtin::Lbuiltin;
+use rispreter_lval::lval_eval::lval_eval;
+use rispreter_lval::lval_def::Lenv;
+use rispreter_lval::lval_builtin::Lbuiltin;
 
 fn main() -> io::Result<()>{
     let mut lenv = Lenv::new();
