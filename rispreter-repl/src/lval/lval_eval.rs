@@ -1,4 +1,5 @@
 use crate::lval::lval_def::*;
+use crate::lval::lval_builtin;
 
 pub fn lval_eval(lenv: &mut Lenv, lval: &mut Lval) -> Lval {
     match &lval.ltype {
@@ -49,11 +50,62 @@ pub fn lval_eval_sexpr(lenv: &mut Lenv, lval: &mut Lval) -> Lval {
     if lval.cell.len() == 0 { return lval.clone(); }
     if lval.cell.len() == 1 { return lval.lval_take(0); }
 
-    let f = lval.lval_pop();
-    if let LvalType::LVAL_FUN(fun) = &f.ltype {
-        fun.clone().0(lenv, lval)
-    } else {
-        Lval::lval_err("First element is not a function!".to_string())
+    let mut f = lval.lval_pop();
+    lval_call(lenv, &mut f, lval)
+}
+
+pub fn lval_call(lenv: &mut Lenv, f: &mut Lval, lval: &mut Lval) -> Lval {
+    //TODO: this should'nt be cloned
+    match f.ltype.clone() {
+        // if builtin we return
+        LvalType::LVAL_FUN(builtin) => {
+            builtin.clone().0(lenv, lval)
+        },
+        // if we have a lambda expression then...
+        LvalType::LVAL_LAMBDA(mut lambda) => {
+            // record argument counts
+            let given = lval.cell.len();
+            let total = lambda.formals.cell.len();
+            println!("given {}", given);
+            println!("total {}", total);
+
+            // while arguments still to be processed
+            while lval.cell.len() > 0 {
+                // if we ran out of formal arguments to bind
+                if lambda.formals.cell.len() == 0 {
+                    return Lval::lval_err(format!("Function passed to many argyments. Got {}, expect {}", given, total))
+                }
+
+                // pop the first symbol from the formals
+                println!("lambda args formals count: {}", lambda.formals.cell.len());
+                let sym = lambda.formals.lval_pop();
+                println!("lambda args formals count after pop: {}", lambda.formals.cell.len());
+                println!("{:?}", sym.clone());
+
+                //pop the next argument from the list
+                println!("lval args count: {}", lval.cell.len());
+                let val = lval.lval_pop();
+                println!("lval args count after pop: {}", lval.cell.len());
+                println!("{:?}", val.clone());
+                // bind a copy to the lambda local env
+                lambda.local_lenv.put(sym.to_string(), Box::new(val));
+            };
+
+            // if all formals have been bound evaluate
+            if lambda.formals.cell.len() == 0 {
+                //set enviroment parent to evaluation enviroment
+                // TODO: this should't be cloned
+                lambda.local_lenv.paren_env = Some(Box::new(lenv.clone()));
+
+                return lval_builtin::eval(&mut lambda.local_lenv, Lval::lval_sexpr().add_cell(*lambda.body.clone()))
+
+            } else {
+                return f.clone()
+            }
+        },
+        _ => {
+            Lval::lval_err(format!("Not a builtin function or a lambda"))
+        }
     }
 }
 

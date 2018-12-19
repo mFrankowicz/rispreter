@@ -1,14 +1,8 @@
 use crate::lval::lval_def::*;
 use crate::lval::lval_eval;
+//use crate::lval::lval_lambda::LLambda;
 
 pub struct Lbuiltin(pub fn(lenv: &mut Lenv, lval: &mut Lval) -> Lval);
-
-// pub struct LFunction<'a> {
-//     name: String,
-//     env: Box<&'a Lenv>,
-//     formals: Box<Lval>,
-//     body: Box<Lval>
-// }
 
 impl Lbuiltin {
     pub fn add_builtins(lenv: &mut Lenv) {
@@ -24,6 +18,8 @@ impl Lbuiltin {
         lenv.add_builtin("cons", Lbuiltin::lbuiltin_cons());
         lenv.add_builtin("eval", Lbuiltin::lbuiltin_eval());
         lenv.add_builtin("def", Lbuiltin::lbuiltin_def());
+        lenv.add_builtin("=", Lbuiltin::lbuiltin_put());
+        lenv.add_builtin("\\", Lbuiltin::lbuiltin_lambda());
 
     }
 
@@ -73,6 +69,14 @@ impl Lbuiltin {
 
     fn lbuiltin_def() -> Lbuiltin {
         Lbuiltin(def)
+    }
+
+    fn lbuiltin_put() -> Lbuiltin {
+        Lbuiltin(put)
+    }
+
+    fn lbuiltin_lambda() -> Lbuiltin {
+        Lbuiltin(lambda)
     }
 }
 
@@ -364,10 +368,10 @@ fn cons(_env: &mut Lenv, lval: &mut Lval) -> Lval {
 /// let res = eval_rispreter(&mut builtins, "(eval {+ 1 2 3})".to_string());
 /// assert_eq!(6f64, res);
 /// ```
-fn eval(env: &mut Lenv, lval: &mut Lval) -> Lval {
-    if lval.cell.len() == 0 || lval.cell.len() > 1 {
-        return Lval::lval_error_argssize(lval.cell.len(), 1)
-    }
+pub fn eval(env: &mut Lenv, lval: &mut Lval) -> Lval {
+    // if lval.cell.len() == 0 || lval.cell.len() > 1 {
+    //     return Lval::lval_error_argssize(lval.cell.len(), 1)
+    // }
     if lval.cell[0].ltype != LvalType::LVAL_QEXPR {
         return Lval::lval_error_type(lval.cell[0].ltype.clone(), LvalType::LVAL_QEXPR)
     }
@@ -376,6 +380,11 @@ fn eval(env: &mut Lenv, lval: &mut Lval) -> Lval {
     x.ltype = LvalType::LVAL_SEXPR;
     lval_eval::lval_eval(env, &mut x)
 }
+
+fn def(env: &mut Lenv, lval: &mut Lval) -> Lval {
+    var(env, lval, "def")
+}
+
 
 /// Binds the n symbols of an Q-expression in its followings bindings.
 /// # Examples
@@ -390,7 +399,11 @@ fn eval(env: &mut Lenv, lval: &mut Lval) -> Lval {
 /// let res = eval_rispreter(&mut builtins, "(head x)".to_string());
 /// assert_eq!(1f64, res);
 /// ```
-fn def(env: &mut Lenv, lval: &mut Lval) -> Lval {
+fn put(env: &mut Lenv, lval: &mut Lval) -> Lval {
+    var(env, lval, "=")
+}
+
+fn var(env: &mut Lenv, lval: &mut Lval, func: &str) -> Lval {
     if lval.cell[0].cell.len() == 0 {
         return Lval::lval_error_empty_qexpr()
     }
@@ -417,10 +430,28 @@ fn def(env: &mut Lenv, lval: &mut Lval) -> Lval {
 
     for i in 0..symbols_list.cell.len() {
         if let LvalType::LVAL_SYM(str) = &symbols_list.cell[i].ltype {
-            env.put(str.to_string(), lval.cell[i].clone());
+            match func {
+                "def" => {
+                    env.def(str.to_string(), lval.cell[i].clone());
+                },
+                "put" => {
+                    env.put(str.to_string(), lval.cell[i].clone());
+                },
+                _ => {
+
+                }
+            }
+
         }
     }
     Lval::lval_sexpr()
+}
+
+fn lambda(_env: &mut Lenv, lval: &mut Lval) -> Lval {
+    let formals = lval.lval_pop();
+    let body = lval.lval_pop();
+
+    Lval::lval_lambda(formals, body)
 }
 
 #[cfg(test)]

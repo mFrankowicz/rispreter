@@ -3,6 +3,8 @@ use std::collections::HashMap;
 use std::collections::VecDeque;
 use std::fmt;
 
+use crate::lval::lval_lambda::LLambda;
+
 #[allow(non_camel_case_types)] // please
 #[derive(PartialEq, Debug, Clone)]
 pub enum LvalType {
@@ -10,6 +12,7 @@ pub enum LvalType {
     LVAL_NUM(f64),
     LVAL_SYM(String),
     LVAL_FUN(Lbuiltin),
+    LVAL_LAMBDA(LLambda),
     LVAL_STRING(String),
     LVAL_SEXPR,
     LVAL_QEXPR,
@@ -33,6 +36,9 @@ impl fmt::Display for LvalType {
             LvalType::LVAL_FUN(fun) => {
                 write!(f, "{:?}", fun)
             },
+            LvalType::LVAL_LAMBDA(_lambda) => {
+                write!(f, "\\")
+            },
             LvalType::LVAL_SEXPR => {
                 write!(f, "()")
             },
@@ -46,7 +52,6 @@ impl fmt::Display for LvalType {
 #[derive(PartialEq, Debug, Clone)]
 pub struct Lval {
     pub ltype: LvalType,
-    pub lenv: Box<Lenv>,
     pub cell: VecDeque<Box<Lval>>,
 }
 
@@ -55,7 +60,6 @@ impl Lval {
     pub fn lval_num(num: f64) -> Lval {
         Lval {
             ltype: LvalType::LVAL_NUM(num),
-            lenv: Box::new(Lenv::new()),
             cell: VecDeque::new(),
         }
     }
@@ -63,7 +67,6 @@ impl Lval {
     pub fn lval_err(err: String) -> Lval {
         Lval {
             ltype: LvalType::LVAL_ERR(err),
-            lenv: Box::new(Lenv::new()),
             cell: VecDeque::new(),
         }
     }
@@ -71,7 +74,6 @@ impl Lval {
     pub fn lval_sym(sym: String) -> Lval {
         Lval {
             ltype: LvalType::LVAL_SYM(sym),
-            lenv: Box::new(Lenv::new()),
             cell: VecDeque::new(),
         }
     }
@@ -79,7 +81,6 @@ impl Lval {
     pub fn lval_string(str: String) -> Lval {
         Lval {
             ltype: LvalType::LVAL_STRING(str),
-            lenv: Box::new(Lenv::new()),
             cell: VecDeque::new(),
         }
     }
@@ -87,7 +88,6 @@ impl Lval {
     pub fn lval_sexpr() -> Lval {
         Lval {
             ltype: LvalType::LVAL_SEXPR,
-            lenv: Box::new(Lenv::new()),
             cell: VecDeque::new(),
         }
     }
@@ -95,7 +95,6 @@ impl Lval {
     pub fn lval_qexpr() -> Lval {
         Lval {
             ltype: LvalType::LVAL_QEXPR,
-            lenv: Box::new(Lenv::new()),
             cell: VecDeque::new(),
         }
     }
@@ -103,7 +102,13 @@ impl Lval {
     pub fn lval_fun(func: Lbuiltin) -> Lval {
         Lval {
             ltype: LvalType::LVAL_FUN(func),
-            lenv: Box::new(Lenv::new()),
+            cell: VecDeque::new(),
+        }
+    }
+
+    pub fn lval_lambda(formals: Lval, body: Lval) -> Lval {
+        Lval {
+            ltype: LvalType::LVAL_LAMBDA(LLambda::new(formals, body)),
             cell: VecDeque::new(),
         }
     }
@@ -210,12 +215,14 @@ impl PartialEq<Lval> for f64 {
 
 #[derive(PartialEq, Debug, Clone)]
 pub struct Lenv {
+    pub paren_env: Option<Box<Lenv>>,
     vals: HashMap<String, Box<Lval>>,
 }
 
 impl Lenv {
     pub fn new() -> Lenv {
         Lenv {
+            paren_env: None,
             vals: HashMap::new(),
         }
     }
@@ -226,11 +233,42 @@ impl Lenv {
     }
 
     pub fn get(&self, k: &String) -> Option<&Box<Lval>> {
-        self.vals.get(k)
+        match self.vals.get(k) {
+            Some(ref mut sym) => {
+                Some(sym)
+            },
+            None => {
+                match self.paren_env {
+                    Some(ref paren_sym) => {
+                        paren_sym.get(k)
+                    },
+                    None => {
+                        None
+                    }
+                }
+            }
+        }
     }
 
     pub fn put(&mut self, k: String, v: Box<Lval>) {
         self.vals.insert(k, v);
+    }
+
+    // did you got that recursion? :-O
+    // lets test...
+    // *goes to write a test*
+    // *test pass*
+    // ok, it's working for now... ;)
+    pub fn def(&mut self, k: String, v: Box<Lval>) -> Option<()> {
+        match self.paren_env {
+            Some(ref mut paren) => {
+                paren.def(k, v)
+            },
+            None => {
+                self.put(k, v);
+                None
+            }
+        }
     }
 }
 
@@ -259,5 +297,30 @@ pub mod tests {
         assert_eq!(lval.ltype, LvalType::LVAL_QEXPR);
     }
 
+    #[test]
+    fn test_lenv_def() {
+        let k = String::from("x");
+        let v = Box::new(Lval::lval_num(1.0));
+        let mut lenv = Lenv::new();
+        lenv.paren_env = Some(Box::new(Lenv::new()));
+        lenv.def(k, v);
+        assert_eq!(Some(&Box::new(Lval::lval_num(1.0))), lenv.paren_env.unwrap().get(&String::from("x")));
+    }
+
+    #[test]
+    fn test_lenv_def_and_local_lenv() {
+        let k = String::from("x");
+        let v = Box::new(Lval::lval_num(1.0));
+        let v_local = Box::new(Lval::lval_string("local_sym".to_string()));
+
+        let mut lenv = Lenv::new();
+
+        lenv.put(String::from("x"), v_local);
+
+        lenv.paren_env = Some(Box::new(Lenv::new()));
+        lenv.def(k, v);
+        assert_eq!(Some(&Box::new(Lval::lval_num(1.0))), lenv.paren_env.clone().unwrap().get(&String::from("x")));
+        assert_eq!(Some(&Box::new(Lval::lval_string("local_sym".to_string()))), lenv.get(&String::from("x")));
+    }
 
 }
