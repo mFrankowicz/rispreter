@@ -95,7 +95,7 @@ pub fn lval_call(lenv: &mut Lenv, f: &mut Lval, lval: &mut Lval) -> Lval {
             if lambda.formals.cell.len() == 0 {
                 //set enviroment parent to evaluation enviroment
                 // TODO: this should't be cloned
-                lambda.local_lenv.paren_env = Some(Box::new(&mut lenv));
+                lambda.local_lenv.paren_env = Some(Box::new(lenv.clone()));
 
                 return lval_builtin::eval(&mut lambda.local_lenv, Lval::lval_sexpr().add_cell(*lambda.body.clone()))
 
