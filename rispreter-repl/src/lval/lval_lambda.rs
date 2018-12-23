@@ -1,4 +1,5 @@
 use crate::lval::lval_def::*;
+use crate::lval::lval_env::Lenv;
 
 #[derive(PartialEq, Debug, Clone)]
 pub struct LLambda {

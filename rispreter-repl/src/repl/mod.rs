@@ -1,4 +1,4 @@
-use crate::lval::lval_def::*;
+use crate::lval::lval_env::Lenv;
 use crate::lval::lval_builtin::*;
 use crate::eval::eval_rispreter;
 
@@ -26,7 +26,9 @@ impl RispRepl {
 
         while let ReadResult::Input(line) = interface.read_line()? {
             println!("{}", eval_rispreter(&mut self.env, line.to_string()));
-
+            for child in self.env.children() {
+                child.detach();
+            }
             if !line.trim().is_empty() {
                 interface.add_history_unique(line);
             }

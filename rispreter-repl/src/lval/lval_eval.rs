@@ -1,18 +1,12 @@
 use crate::lval::lval_def::*;
 use crate::lval::lval_builtin;
+use crate::lval::lval_env::Lenv;
 
 pub fn lval_eval(lenv: &mut Lenv, lval: &mut Lval) -> Lval {
     match &lval.ltype {
         LvalType::LVAL_SYM(sym) => {
-            let x = lenv.get(&sym);
-            match x {
-                Some(v) => {
-                    return *v.clone();
-                },
-                None => {
-                    return Lval::lval_err(format!("Can't find {:?}", sym));
-                }
-            }
+            let x = lenv.get(sym.to_string());
+            x
         },
         LvalType::LVAL_SEXPR => {
             return lval_eval_sexpr(lenv, lval);
@@ -68,7 +62,7 @@ pub fn lval_call(lenv: &mut Lenv, f: &mut Lval, lval: &mut Lval) -> Lval {
             let total = lambda.formals.cell.len();
 
             // while arguments still to be processed
-            println!("before binding lambda formals : {:?}", lambda.formals.cell);
+            //println!("before binding lambda formals : {:?}", lambda.formals.cell);
 
             while lval.cell.len() > 0 {
                 //println!("lval cell len: {}", lval.cell.len());
@@ -85,7 +79,7 @@ pub fn lval_call(lenv: &mut Lenv, f: &mut Lval, lval: &mut Lval) -> Lval {
                     if s == "&" {
                         //TODO ensure its followd by another symbol
                         let next_sym = lambda.formals.lval_pop();
-                        lambda.local_lenv.put(next_sym.to_string(), Box::new(lval_builtin::list(lenv, lval)));
+                        lambda.local_lenv.put(next_sym.to_string(), lval_builtin::list(lenv, lval));
                         break;
                     }
                 }
@@ -95,16 +89,32 @@ pub fn lval_call(lenv: &mut Lenv, f: &mut Lval, lval: &mut Lval) -> Lval {
                 let val = lval.lval_pop();
 
                 // bind a copy to the lambda local env
-                lambda.local_lenv.put(sym.to_string(), Box::new(val));
+                lambda.local_lenv.put(sym.to_string(), val);
             };
-            println!("after binding lambda formals : {:?}", lambda.formals.cell);
+            //println!("after binding lambda formals : {:?}", lambda.formals.cell);
             // if all formals have been bound evaluate
             if lambda.formals.cell.len() == 0 {
                 //set enviroment parent to evaluation enviroment
-                // TODO: this should't be cloned
-                lambda.local_lenv.paren_env = Some(Box::new(lenv.clone()));
+                //lambda.local_lenv.paren_env = Some(Box::new(lenv.clone()));
+                // println!("lenv before: {:?}", lenv);
+                // match lenv.first_child() {
+                //     Some(child) => {
+                //         child.detach();
+                //         lenv.append(child);
+                //     },
+                //     None => {
+                //         lenv.append(*lambda.local_lenv);
+                //     }
+                // }
+                //
+                // println!("lenv after: {:?}", lenv);
+                // if let Some(child) = lenv.first_child() {
+                //     child.detach()
+                // }
+                lenv.append(*lambda.local_lenv);
+                //println!("lenv: {:?}", lenv);
+                return lval_builtin::eval(&mut lenv.first_child().unwrap(), Lval::lval_sexpr().add_cell(*lambda.body.clone()))
 
-                return lval_builtin::eval(&mut lambda.local_lenv, Lval::lval_sexpr().add_cell(*lambda.body.clone()))
 
             } else {
                 return Lval::lval_lambda_copy(*lambda.local_lenv, *lambda.formals, *lambda.body)
@@ -120,6 +130,7 @@ pub fn lval_call(lenv: &mut Lenv, f: &mut Lval, lval: &mut Lval) -> Lval {
 pub mod tests {
     use super::*;
     use crate::lval::lval_builtin::*;
+    use crate::lval::lval_env::Lenv;
     // use crate::lval_def::*;
 
     #[test]
@@ -193,6 +204,6 @@ pub mod tests {
         qexpr.add_cell(a).add_cell(b).add_cell(c);
         top.add_cell(head).add_cell(qexpr);
         let res = lval_eval(&mut env, &mut top);
-        assert_eq!(res.ltype, LvalType::LVAL_NUM(1.0));
+        assert_eq!(res.cell[0].ltype, LvalType::LVAL_NUM(1.0));
     }
 }
