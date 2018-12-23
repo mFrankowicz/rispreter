@@ -153,8 +153,8 @@ impl Lval {
     pub fn lval_error_argssize(a: usize, b: usize) -> Lval {
         Lval::lval_err(format!("Wrong num of args, got {} expect {}", a, b))
     }
-    pub fn lval_error_empty_qexpr() -> Lval {
-        Lval::lval_err(format!("Q-expression is empty!"))
+    pub fn lval_error_empty_qexpr(caller: String, a: Lval) -> Lval {
+        Lval::lval_err(format!("Q-expression is empty!: caller: {}, \n val: {:?}", caller, a))
     }
 }
 
@@ -277,6 +277,10 @@ impl Lenv {
                 None
             }
         }
+    }
+
+    pub fn contains(&self, k: String) -> bool {
+        self.vals.contains_key(&k)
     }
 }
 

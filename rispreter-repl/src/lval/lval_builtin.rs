@@ -239,7 +239,7 @@ fn head(_lenv: &mut Lenv, lval: &mut Lval) -> Lval {
     }
 
     if qexpr.cell.len() == 0 {
-         return Lval::lval_error_empty_qexpr()
+         return Lval::lval_error_empty_qexpr("lval_builtin::head".to_string(), qexpr)
     }
 
     let head = qexpr.lval_pop();
@@ -270,7 +270,7 @@ fn tail(_env: &mut Lenv, lval: &mut Lval) ->  Lval {
 
 
     if qexpr.cell.len() == 0 {
-         return Lval::lval_error_empty_qexpr()
+         return Lval::lval_error_empty_qexpr("lval_builtin::tail".to_string(), qexpr)
     }
 
     let tail = qexpr.lval_split(1);
@@ -319,11 +319,11 @@ fn join(_env: &mut Lenv, lval: &mut Lval) -> Lval {
 
     let mut y = lval.lval_pop();
     if y.cell.len() == 0 {
-         return Lval::lval_error_empty_qexpr()
+         return Lval::lval_error_empty_qexpr("right arg at lval_builtin::join".to_string(), y)
     }
     let mut x = lval.lval_pop();
     if x.cell.len() == 0 {
-         return Lval::lval_error_empty_qexpr()
+         return Lval::lval_error_empty_qexpr("left arg at lval_builtin::join".to_string(), x)
     }
 
     y.cell.append(&mut x.cell);
@@ -404,7 +404,7 @@ fn put(env: &mut Lenv, lval: &mut Lval) -> Lval {
 
 fn var(env: &mut Lenv, lval: &mut Lval, func: &str) -> Lval {
     if lval.cell[0].cell.len() == 0 {
-        return Lval::lval_error_empty_qexpr()
+        return Lval::lval_error_empty_qexpr("lval_builtin::var".to_string(), *lval.cell[0].clone())
     }
     let left_len = lval.cell[0].cell.len();
     let mut right_len = 0;
