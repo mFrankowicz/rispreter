@@ -204,6 +204,6 @@ pub mod tests {
         qexpr.add_cell(a).add_cell(b).add_cell(c);
         top.add_cell(head).add_cell(qexpr);
         let res = lval_eval(&mut env, &mut top);
-        assert_eq!(res.ltype, LvalType::LVAL_NUM(1.0));
+        assert_eq!(res.cell[0].ltype, LvalType::LVAL_NUM(1.0));
     }
 }
