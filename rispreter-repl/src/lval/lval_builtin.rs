@@ -1,5 +1,6 @@
 use crate::lval::lval_def::*;
 use crate::lval::lval_eval;
+use crate::lval::lval_env::Lenv;
 //use crate::lval::lval_lambda::LLambda;
 
 pub struct Lbuiltin(pub fn(lenv: &mut Lenv, lval: &mut Lval) -> Lval, String);
@@ -242,7 +243,8 @@ fn head(_lenv: &mut Lenv, lval: &mut Lval) -> Lval {
          return Lval::lval_error_empty_qexpr("lval_builtin::head".to_string(), qexpr)
     }
 
-    let head = qexpr.lval_pop();
+    let mut head = Lval::lval_qexpr();
+    head.add_cell(qexpr.lval_pop());
     head
 }
 
@@ -403,8 +405,8 @@ fn put(env: &mut Lenv, lval: &mut Lval) -> Lval {
 }
 
 fn var(env: &mut Lenv, lval: &mut Lval, func: &str) -> Lval {
-    if lval.cell[0].cell.len() == 0 {
-        return Lval::lval_error_empty_qexpr("lval_builtin::var".to_string(), *lval.cell[0].clone())
+    if let LvalType::LVAL_QEXPR = &lval.cell[0].ltype {} else {
+        return Lval::lval_err(format!("not a Q-expression got {}, expect {}", lval.ltype, LvalType::LVAL_QEXPR))
     }
     let left_len = lval.cell[0].cell.len();
     let mut right_len = 0;
@@ -431,10 +433,10 @@ fn var(env: &mut Lenv, lval: &mut Lval, func: &str) -> Lval {
         if let LvalType::LVAL_SYM(str) = &symbols_list.cell[i].ltype {
             match func {
                 "def" => {
-                    env.def(str.to_string(), lval.cell[i].clone());
+                    env.def(str.to_string(), *lval.cell[i].clone());
                 },
                 "put" => {
-                    env.put(str.to_string(), lval.cell[i].clone());
+                    env.put(str.to_string(), *lval.cell[i].clone());
                 },
                 _ => {
 

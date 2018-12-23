@@ -1,5 +1,6 @@
 use crate::lval::lval_eval::*;
 use crate::lval::lval_def::*;
+use crate::lval::lval_env::Lenv;
 use crate::read::read;
 use rispreter_parser::parse_risp;
 
@@ -16,6 +17,7 @@ pub mod tests {
     use crate::read::read;
     use crate::lval::lval_builtin::Lbuiltin;
     use rispreter_parser::parse_risp;
+    use crate::lval::lval_env::Lenv;
 
     #[test]
     fn test_parent_env_keeps_lvals_defined_inside_lambdas() {
