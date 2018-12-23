@@ -36,8 +36,9 @@ impl fmt::Display for LvalType {
             LvalType::LVAL_FUN(fun) => {
                 write!(f, "{:?}", fun)
             },
-            LvalType::LVAL_LAMBDA(_lambda) => {
-                write!(f, "\\")
+            LvalType::LVAL_LAMBDA(lambda) => {
+                write!(f, "body: {:?}\n", lambda.body.cell)?;
+                write!(f, "formals: {:?}", lambda.formals.cell)
             },
             LvalType::LVAL_SEXPR => {
                 write!(f, "()")
@@ -106,9 +107,16 @@ impl Lval {
         }
     }
 
-    pub fn lval_lambda(formals: Lval, body: Lval) -> Lval {
+    pub fn lval_lambda(paren_env: Box<Lenv>, formals: Lval, body: Lval) -> Lval {
         Lval {
             ltype: LvalType::LVAL_LAMBDA(LLambda::new(formals, body)),
+            cell: VecDeque::new(),
+        }
+    }
+
+    pub fn lval_lambda_copy(env: Lenv, formals: Lval, body: Lval) -> Lval {
+        Lval {
+            ltype: LvalType::LVAL_LAMBDA(LLambda::llambda_copy(env, formals, body)),
             cell: VecDeque::new(),
         }
     }

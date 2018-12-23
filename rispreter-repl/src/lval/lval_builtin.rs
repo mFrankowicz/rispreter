@@ -2,7 +2,7 @@ use crate::lval::lval_def::*;
 use crate::lval::lval_eval;
 //use crate::lval::lval_lambda::LLambda;
 
-pub struct Lbuiltin(pub fn(lenv: &mut Lenv, lval: &mut Lval) -> Lval);
+pub struct Lbuiltin(pub fn(lenv: &mut Lenv, lval: &mut Lval) -> Lval, String);
 
 impl Lbuiltin {
     pub fn add_builtins(lenv: &mut Lenv) {
@@ -20,63 +20,62 @@ impl Lbuiltin {
         lenv.add_builtin("def", Lbuiltin::lbuiltin_def());
         lenv.add_builtin("=", Lbuiltin::lbuiltin_put());
         lenv.add_builtin("\\", Lbuiltin::lbuiltin_lambda());
-
     }
 
     fn lbuiltin_add() -> Lbuiltin {
-        Lbuiltin(add)
+        Lbuiltin(add, "+".to_string())
     }
 
     fn lbuiltin_sub() -> Lbuiltin {
-        Lbuiltin(sub)
+        Lbuiltin(sub, "-".to_string())
     }
 
     fn lbuiltin_mul() -> Lbuiltin {
-        Lbuiltin(mul)
+        Lbuiltin(mul, "*".to_string())
     }
 
     fn lbuiltin_div() -> Lbuiltin {
-        Lbuiltin(div)
+        Lbuiltin(div, "/".to_string())
     }
 
     fn lbuiltin_mod() -> Lbuiltin {
-        Lbuiltin(modl)
+        Lbuiltin(modl, "mod".to_string())
     }
 
     fn lbuiltin_head() -> Lbuiltin {
-        Lbuiltin(head)
+        Lbuiltin(head, "head".to_string())
     }
 
     fn lbuiltin_tail() -> Lbuiltin {
-        Lbuiltin(tail)
+        Lbuiltin(tail, "tail".to_string())
     }
 
     fn lbuiltin_list() -> Lbuiltin {
-        Lbuiltin(list)
+        Lbuiltin(list, "list".to_string())
     }
 
     fn lbuiltin_join() -> Lbuiltin {
-        Lbuiltin(join)
+        Lbuiltin(join, "join".to_string())
     }
 
     fn lbuiltin_cons() -> Lbuiltin {
-        Lbuiltin(cons)
+        Lbuiltin(cons, "cons".to_string())
     }
 
     fn lbuiltin_eval() -> Lbuiltin {
-        Lbuiltin(eval)
+        Lbuiltin(eval, "eval".to_string())
     }
 
     fn lbuiltin_def() -> Lbuiltin {
-        Lbuiltin(def)
+        Lbuiltin(def, "def".to_string())
     }
 
     fn lbuiltin_put() -> Lbuiltin {
-        Lbuiltin(put)
+        Lbuiltin(put, "=".to_string())
     }
 
     fn lbuiltin_lambda() -> Lbuiltin {
-        Lbuiltin(lambda)
+        Lbuiltin(lambda, "\\".to_string())
     }
 }
 
@@ -88,13 +87,13 @@ impl PartialEq for Lbuiltin {
 
 impl Clone for Lbuiltin {
     fn clone(&self) -> Self {
-        Lbuiltin(self.0.clone())
+        Lbuiltin(self.0.clone(), self.1.clone())
     }
 }
 
 impl std::fmt::Debug for Lbuiltin {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "Lbuiltin(0x{:x})", self.0 as usize)
+        write!(f, "prelude({})", self.1)
     }
 }
 
@@ -290,7 +289,7 @@ fn tail(_env: &mut Lenv, lval: &mut Lval) ->  Lval {
 /// let res = eval_rispreter(&mut builtins, "(head (list 1 2 3))".to_string());
 /// assert_eq!(1f64, res);
 /// ```
-fn list(_env: &mut Lenv, lval: &mut Lval) -> Lval {
+pub fn list(_env: &mut Lenv, lval: &mut Lval) -> Lval {
     lval.ltype = LvalType::LVAL_QEXPR;
     lval.clone()
 }
@@ -447,11 +446,11 @@ fn var(env: &mut Lenv, lval: &mut Lval, func: &str) -> Lval {
     Lval::lval_sexpr()
 }
 
-fn lambda(_env: &mut Lenv, lval: &mut Lval) -> Lval {
+fn lambda(env: &mut Lenv, lval: &mut Lval) -> Lval {
     let formals = lval.lval_pop();
     let body = lval.lval_pop();
 
-    Lval::lval_lambda(formals, body)
+    Lval::lval_lambda(Box::new(env.clone()), formals, body)
 }
 
 #[cfg(test)]

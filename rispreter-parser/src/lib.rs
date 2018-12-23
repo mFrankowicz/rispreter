@@ -130,7 +130,7 @@ named!(
     user_symbol<String>,
     map!(
         map_res!(
-            is_a!("qwertyuiopasdfghjklçzxcvbnmQWERTYUIOPASDFGHJKLÇZXCVBNM1234567890_§?£¢¬~+-*/%\\"), str::from_utf8),
+            is_a!("qwertyuiopasdfghjklçzxcvbnmQWERTYUIOPASDFGHJKLÇZXCVBNM1234567890_§?£¢¬~+-*/%&\\"), str::from_utf8),
             |s| {s.to_string()}
         )
 );

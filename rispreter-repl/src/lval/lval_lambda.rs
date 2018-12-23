@@ -15,4 +15,12 @@ impl LLambda {
             body: Box::new(body),
         }
     }
+
+    pub fn llambda_copy(env: Lenv, formals: Lval, body: Lval) -> Self {
+        LLambda {
+            local_lenv: Box::new(env),
+            formals: Box::new(formals),
+            body: Box::new(body),
+        }
+    }
 }
