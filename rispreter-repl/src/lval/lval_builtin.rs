@@ -21,6 +21,13 @@ impl Lbuiltin {
         lenv.add_builtin("def", Lbuiltin::lbuiltin_def());
         lenv.add_builtin("=", Lbuiltin::lbuiltin_put());
         lenv.add_builtin("\\", Lbuiltin::lbuiltin_lambda());
+        lenv.add_builtin("eq", Lbuiltin::lbuiltin_eq());
+        lenv.add_builtin("neq", Lbuiltin::lbuiltin_neq());
+        lenv.add_builtin("gt", Lbuiltin::lbuiltin_gt());
+        lenv.add_builtin("lt", Lbuiltin::lbuiltin_lt());
+        lenv.add_builtin("gte", Lbuiltin::lbuiltin_gte());
+        lenv.add_builtin("lte", Lbuiltin::lbuiltin_lte());
+        lenv.add_builtin("if", Lbuiltin::lbuiltin_if());
     }
 
     fn lbuiltin_add() -> Lbuiltin {
@@ -77,6 +84,34 @@ impl Lbuiltin {
 
     fn lbuiltin_lambda() -> Lbuiltin {
         Lbuiltin(lambda, "\\".to_string())
+    }
+
+    fn lbuiltin_eq() -> Lbuiltin {
+        Lbuiltin(eq, "eq".to_string())
+    }
+
+    fn lbuiltin_neq() -> Lbuiltin {
+        Lbuiltin(neq, "neq".to_string())
+    }
+
+    fn lbuiltin_gt() -> Lbuiltin {
+        Lbuiltin(gt, "gt".to_string())
+    }
+
+    fn lbuiltin_lt() -> Lbuiltin {
+        Lbuiltin(lt, "lt".to_string())
+    }
+
+    fn lbuiltin_gte() -> Lbuiltin {
+        Lbuiltin(gte, "gte".to_string())
+    }
+
+    fn lbuiltin_lte() -> Lbuiltin {
+        Lbuiltin(lte, "lte".to_string())
+    }
+
+    fn lbuiltin_if() -> Lbuiltin {
+        Lbuiltin(lif, "if".to_string())
     }
 }
 
@@ -220,6 +255,192 @@ fn op(_lenv: &mut Lenv, lval: &mut Lval, op: char) -> Lval {
         }
     }
     x
+}
+
+fn eq(_lenv: &mut Lenv, lval: &mut Lval) -> Lval {
+    let x = lval.lval_pop();
+    let y = lval.lval_pop();
+    if x == y {
+        Lval::lval_bool(true)
+    } else {
+        Lval::lval_bool(false)
+    }
+}
+
+fn neq(_lenv: &mut Lenv, lval: &mut Lval) -> Lval {
+    let x = lval.lval_pop();
+    let y = lval.lval_pop();
+    if x != y {
+        Lval::lval_bool(true)
+    } else {
+        Lval::lval_bool(false)
+    }
+}
+
+fn gt(lenv: &mut Lenv, lval: &mut Lval) -> Lval {
+    let x = lval.lval_pop();
+    let y = lval.lval_pop();
+    ord_op(lenv, x, y, "gt")
+}
+
+fn lt(lenv: &mut Lenv, lval: &mut Lval) -> Lval {
+    let x = lval.lval_pop();
+    let y = lval.lval_pop();
+    ord_op(lenv, x, y, "lt")
+}
+
+fn gte(lenv: &mut Lenv, lval: &mut Lval) -> Lval {
+    let x = lval.lval_pop();
+    let y = lval.lval_pop();
+    ord_op(lenv, x, y, "gte")
+}
+
+fn lte(lenv: &mut Lenv, lval: &mut Lval) -> Lval {
+    let x = lval.lval_pop();
+    let y = lval.lval_pop();
+    ord_op(lenv, x, y, "lte")
+}
+
+fn ord_op(_lenv: &mut Lenv, x: Lval, y: Lval, op: &str) -> Lval{
+
+    match (x.ltype, y.ltype) {
+        (LvalType::LVAL_NUM(a), LvalType::LVAL_NUM(b)) => {
+            match op {
+                "gt" => {
+                    if a > b {
+                        Lval::lval_bool(true)
+                    } else {
+                        Lval::lval_bool(false)
+                    }
+                },
+                "lt" => {
+                    if a < b {
+                        Lval::lval_bool(true)
+                    } else {
+                        Lval::lval_bool(false)
+                    }
+                },
+                "gte" => {
+                    if a >= b {
+                        Lval::lval_bool(true)
+                    } else {
+                        Lval::lval_bool(false)
+                    }
+                },
+                "lte" => {
+                    if a <= b {
+                        Lval::lval_bool(true)
+                    } else {
+                        Lval::lval_bool(false)
+                    }
+                },
+                _ => {
+                    Lval::lval_err(format!("not a symbol"))
+                }
+            }
+        },
+        (LvalType::LVAL_STRING(a), LvalType::LVAL_STRING(b)) => {
+            match op {
+                "gt" => {
+                    if a > b {
+                        Lval::lval_bool(true)
+                    } else {
+                        Lval::lval_bool(false)
+                    }
+                },
+                "lt" => {
+                    if a < b {
+                        Lval::lval_bool(true)
+                    } else {
+                        Lval::lval_bool(false)
+                    }
+                },
+                "gte" => {
+                    if a >= b {
+                        Lval::lval_bool(true)
+                    } else {
+                        Lval::lval_bool(false)
+                    }
+                },
+                "lte" => {
+                    if a <= b {
+                        Lval::lval_bool(true)
+                    } else {
+                        Lval::lval_bool(false)
+                    }
+                },
+                _ => {
+                    Lval::lval_err(format!("not a symbol"))
+                }
+            }
+        },
+        (LvalType::LVAL_QEXPR, LvalType::LVAL_QEXPR) => {
+            match op {
+                "gt" => {
+                    if x.cell.len() > y.cell.len() {
+                        Lval::lval_bool(true)
+                    } else {
+                        Lval::lval_bool(false)
+                    }
+                },
+                "lt" => {
+                    if x.cell.len() < y.cell.len() {
+                        Lval::lval_bool(true)
+                    } else {
+                        Lval::lval_bool(false)
+                    }
+                },
+                "gte" => {
+                    if x.cell.len() >= y.cell.len() {
+                        Lval::lval_bool(true)
+                    } else {
+                        Lval::lval_bool(false)
+                    }
+                },
+                "lte" => {
+                    if x.cell.len() <= y.cell.len() {
+                        Lval::lval_bool(true)
+                    } else {
+                        Lval::lval_bool(false)
+                    }
+                },
+                _ => {
+                    Lval::lval_err(format!("not a symbol"))
+                }
+            }
+        },
+        _ => {
+            Lval::lval_err(format!("can't compare ordered"))
+        }
+    }
+}
+
+fn lif(lenv: &mut Lenv, lval: &mut Lval) -> Lval {
+    lval.cell[1].ltype = LvalType::LVAL_SEXPR;
+    lval.cell[2].ltype = LvalType::LVAL_SEXPR;
+
+    match lval.cell[0].ltype {
+        LvalType::LVAL_BOOL(b) => {
+            match b {
+                true => {
+                    lval_eval::lval_eval(lenv, &mut lval.lval_pop_with_index(1))
+                },
+                false => {
+                    lval_eval::lval_eval(lenv, &mut lval.lval_pop_with_index(2))
+                }
+            }
+        },
+        LvalType::LVAL_NUM(n) => {
+            if n == 0.0 {
+                lval_eval::lval_eval(lenv, &mut lval.lval_pop_with_index(1))
+            } else {
+                lval_eval::lval_eval(lenv, &mut lval.lval_pop_with_index(2))
+            }
+        },
+        _ => {
+            Lval::lval_err(format!("first argument dont evaluetes to bool"))
+        }
+    }
 }
 
 /// Take the head of a Q-expression

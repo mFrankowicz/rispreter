@@ -14,6 +14,7 @@ pub enum LvalType {
     LVAL_FUN(Lbuiltin),
     LVAL_LAMBDA(LLambda),
     LVAL_STRING(String),
+    LVAL_BOOL(bool),
     LVAL_SEXPR,
     LVAL_QEXPR,
 }
@@ -45,6 +46,9 @@ impl fmt::Display for LvalType {
             },
             LvalType::LVAL_QEXPR => {
                 write!(f, "{{}}")
+            },
+            LvalType::LVAL_BOOL(b) => {
+                write!(f, "{}", b)
             }
         }
     }
@@ -77,6 +81,9 @@ impl fmt::Debug for LvalType {
             },
             LvalType::LVAL_QEXPR => {
                 write!(f, "{{}}")
+            },
+            LvalType::LVAL_BOOL(b) => {
+                write!(f, "{}", b)
             }
         }
     }
@@ -132,6 +139,13 @@ impl Lval {
         }
     }
 
+    pub fn lval_bool(b: bool) -> Lval {
+        Lval {
+            ltype: LvalType::LVAL_BOOL(b),
+            cell: VecDeque::new(),
+        }
+    }
+
     pub fn lval_fun(func: Lbuiltin) -> Lval {
         Lval {
             ltype: LvalType::LVAL_FUN(func),
@@ -160,6 +174,10 @@ impl Lval {
 
     pub fn lval_pop(&mut self) -> Lval {
         *self.cell.pop_front().unwrap()
+    }
+
+    pub fn lval_pop_with_index(&mut self, index: usize) -> Lval {
+        *self.cell.remove(index).unwrap()
     }
 
     pub fn lval_take(&mut self, index: usize) -> Lval {
@@ -284,67 +302,17 @@ impl PartialEq<Lval> for f64 {
         }
     }
 }
-//
-// #[derive(PartialEq, Debug, Clone)]
-// pub struct Lenv {
-//     vals: HashMap<String, Box<Lval>>,
-// }
-//
-// impl Lenv {
-//     pub fn new() -> Lenv {
-//         Lenv {
-//             vals: HashMap::new(),
-//         }
-//     }
-//
-//     pub fn add_builtin(&mut self, name: &str, func: Lbuiltin) {
-//         let lval = Lval::lval_fun(func);
-//         self.vals.insert(name.to_string(), Box::new(lval));
-//     }
-//
-//     pub fn get(&self, k: &String) -> Option<&Box<Lval>> {
-//         match self.vals.get(k) {
-//             Some(ref mut sym) => {
-//                 Some(sym)
-//             },
-//             None => {
-//                 match self.paren_env {
-//                     Some(ref paren_sym) => {
-//                         paren_sym.get(k)
-//                     },
-//                     None => {
-//                         None
-//                     }
-//                 }
-//             }
-//         }
-//     }
-//
-//     pub fn put(&mut self, k: String, v: Box<Lval>) {
-//         self.vals.insert(k, v);
-//     }
-//
-//     // did you got that recursion? :-O
-//     // lets test...
-//     // *goes to write a test*
-//     // *test pass*
-//     // ok, it's working for now... ;)
-//     pub fn def(&mut self, k: String, v: Box<Lval>) -> Option<()> {
-//         match self.paren_env {
-//             Some(ref mut paren) => {
-//                 paren.def(k, v)
-//             },
-//             None => {
-//                 self.put(k, v);
-//                 None
-//             }
-//         }
-//     }
-//
-//     pub fn contains(&self, k: String) -> bool {
-//         self.vals.contains_key(&k)
-//     }
-// }
+
+impl PartialEq<Lval> for bool {
+    fn eq(&self, other: &Lval) -> bool {
+        match other.ltype {
+            LvalType::LVAL_BOOL(ref b) => {
+                self == b
+            },
+            _ => false
+        }
+    }
+}
 
 #[cfg(test)]
 pub mod tests {

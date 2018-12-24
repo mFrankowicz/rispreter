@@ -62,22 +62,19 @@ pub fn lval_call(lenv: &mut Lenv, f: &mut Lval, lval: &mut Lval) -> Lval {
             let total = lambda.formals.cell.len();
 
             // while arguments still to be processed
-            //println!("before binding lambda formals : {:?}", lambda.formals.cell);
-
             while lval.cell.len() > 0 {
-                //println!("lval cell len: {}", lval.cell.len());
+
                 // if we ran out of formal arguments to bind
                 if lambda.formals.cell.len() == 0 {
                     return Lval::lval_err(format!("Function passed to many argyments. Got {}, expect {}", given, total))
                 }
 
                 // pop the first symbol from the formals
-
                 let sym = lambda.formals.lval_pop();
 
-                if let LvalType::LVAL_SYM(ref s) = sym.ltype {
+                if let LvalType::LVAL_SYM(s) = &sym.ltype {
                     if s == "&" {
-                        //TODO ensure its followd by another symbol
+                        //TODO: ensure its followd by another symbol
                         let next_sym = lambda.formals.lval_pop();
                         lambda.local_lenv.put(next_sym.to_string(), lval_builtin::list(lenv, lval));
                         break;
@@ -85,38 +82,47 @@ pub fn lval_call(lenv: &mut Lenv, f: &mut Lval, lval: &mut Lval) -> Lval {
                 }
 
                 //pop the next argument from the list
-
                 let val = lval.lval_pop();
 
                 // bind a copy to the lambda local env
                 lambda.local_lenv.put(sym.to_string(), val);
             };
-            //println!("after binding lambda formals : {:?}", lambda.formals.cell);
+
+            if lambda.formals.cell.len() > 0 &&
+            lambda.formals.cell[0].ltype == LvalType::LVAL_SYM("&".to_string()) {
+                if lambda.formals.cell.len() != 2 {
+                    return Lval::lval_err(format!("Function format invalid. Symbol '&' not followed by single symbol"))
+                }
+                lambda.formals.lval_pop();
+                let sym = lambda.formals.lval_pop();
+                let val = Lval::lval_qexpr();
+                lambda.local_lenv.put(sym.to_string(), val);
+            }
+
             // if all formals have been bound evaluate
             if lambda.formals.cell.len() == 0 {
-                //set enviroment parent to evaluation enviroment
-                //lambda.local_lenv.paren_env = Some(Box::new(lenv.clone()));
-                // println!("lenv before: {:?}", lenv);
+
+                for child in lenv.children() {
+                    child.detach();
+                }
+
                 // match lenv.first_child() {
                 //     Some(child) => {
                 //         child.detach();
-                //         lenv.append(child);
                 //     },
                 //     None => {
-                //         lenv.append(*lambda.local_lenv);
+                //
                 //     }
                 // }
-                //
-                // println!("lenv after: {:?}", lenv);
-                // if let Some(child) = lenv.first_child() {
-                //     child.detach()
-                // }
+
+                // apend the lambda local env to parent env
                 lenv.append(*lambda.local_lenv);
-                //println!("lenv: {:?}", lenv);
+
+                // evaluetes in this new context
                 return lval_builtin::eval(&mut lenv.first_child().unwrap(), Lval::lval_sexpr().add_cell(*lambda.body.clone()))
 
-
             } else {
+                // returns a partially bound evalueted lambda
                 return Lval::lval_lambda_copy(*lambda.local_lenv, *lambda.formals, *lambda.body)
             }
         },

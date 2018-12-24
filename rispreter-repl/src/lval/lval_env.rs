@@ -23,7 +23,7 @@ struct Node {
     last_child: WeakLink,
     previous_sibling: WeakLink,
     next_sibling: Link,
-    data: HashMap<String, Lval>,
+    pub data: HashMap<String, Lval>,
 }
 
 type Link = Option<Rc<RefCell<Node>>>;
