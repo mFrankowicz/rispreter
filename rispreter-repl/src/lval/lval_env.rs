@@ -23,7 +23,7 @@ struct Node {
     last_child: WeakLink,
     previous_sibling: WeakLink,
     next_sibling: Link,
-    pub data: HashMap<String, Lval>,
+    data: HashMap<String, Lval>,
 }
 
 type Link = Option<Rc<RefCell<Node>>>;
@@ -71,8 +71,9 @@ macro_rules! try_opt {
 }
 
 impl Lenv {
-    pub fn add_builtin(&mut self, name: &str, func: Lbuiltin) {
+    pub fn add_builtin(&self, name: &str, func: Lbuiltin) {
             let lval = Lval::lval_fun(func);
+
             self.borrow_mut().insert(name.to_string(), lval);
     }
 

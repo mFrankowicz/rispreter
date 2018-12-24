@@ -1,5 +1,5 @@
 use crate::lval::lval_builtin::*;
-use std::collections::HashMap;
+//use std::collections::HashMap;
 use std::collections::VecDeque;
 use std::fmt;
 use crate::lval::lval_env::Lenv;
@@ -153,7 +153,7 @@ impl Lval {
         }
     }
 
-    pub fn lval_lambda(paren_env: Box<Lenv>, formals: Lval, body: Lval) -> Lval {
+    pub fn lval_lambda(_paren_env: Box<Lenv>, formals: Lval, body: Lval) -> Lval {
         Lval {
             ltype: LvalType::LVAL_LAMBDA(LLambda::new(formals, body)),
             cell: VecDeque::new(),

@@ -14,9 +14,9 @@ pub mod tests {
 
     // use crate::lval::lval_eval::*;
     // use crate::lval::lval_def::*;
-    use crate::read::read;
+    //use crate::read::read;
     use crate::lval::lval_builtin::Lbuiltin;
-    use rispreter_parser::parse_risp;
+    //use rispreter_parser::parse_risp;
     use crate::lval::lval_env::Lenv;
 
     #[test]
