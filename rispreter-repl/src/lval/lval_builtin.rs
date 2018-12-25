@@ -1,6 +1,6 @@
 use crate::lval::lval_def::*;
-use crate::lval::lval_eval;
 use crate::lval::lval_env::Lenv;
+use crate::lval::lval_eval;
 //use crate::lval::lval_lambda::LLambda;
 
 pub struct Lbuiltin(pub fn(lenv: &mut Lenv, lval: &mut Lval) -> Lval, String);
@@ -148,7 +148,7 @@ impl std::fmt::Debug for Lbuiltin {
 /// let res = eval_rispreter(&mut builtins, "(+ 1 2)".to_string());
 /// assert_eq!(3f64, res);
 /// ```
-fn add(lenv: &mut Lenv, lval: &mut Lval,) -> Lval {
+fn add(lenv: &mut Lenv, lval: &mut Lval) -> Lval {
     op(lenv, lval, '+')
 }
 
@@ -165,7 +165,7 @@ fn add(lenv: &mut Lenv, lval: &mut Lval,) -> Lval {
 /// let res = eval_rispreter(&mut builtins, "(- 3 2)".to_string());
 /// assert_eq!(1f64, res);
 /// ```
-fn sub(lenv: &mut Lenv, lval: &mut Lval,) -> Lval {
+fn sub(lenv: &mut Lenv, lval: &mut Lval) -> Lval {
     op(lenv, lval, '-')
 }
 
@@ -182,7 +182,7 @@ fn sub(lenv: &mut Lenv, lval: &mut Lval,) -> Lval {
 /// let res = eval_rispreter(&mut builtins, "(* 2 3)".to_string());
 /// assert_eq!(6f64, res);
 /// ```
-fn mul(lenv: &mut Lenv, lval: &mut Lval,) -> Lval {
+fn mul(lenv: &mut Lenv, lval: &mut Lval) -> Lval {
     op(lenv, lval, '*')
 }
 
@@ -203,7 +203,7 @@ fn mul(lenv: &mut Lenv, lval: &mut Lval,) -> Lval {
 /// let res = eval_rispreter(&mut builtins, "(/ 3 0)".to_string());
 /// assert_eq!(Lval::lval_err("Division by Zero".to_string()), res);
 /// ```
-fn div(lenv: &mut Lenv, lval: &mut Lval,) -> Lval {
+fn div(lenv: &mut Lenv, lval: &mut Lval) -> Lval {
     op(lenv, lval, '/')
 }
 
@@ -220,38 +220,51 @@ fn div(lenv: &mut Lenv, lval: &mut Lval,) -> Lval {
 /// let res = eval_rispreter(&mut builtins, "(% 13 7 5)".to_string());
 /// assert_eq!(1f64, res);
 /// ```
-fn modl(lenv: &mut Lenv, lval: &mut Lval,) -> Lval {
+fn modl(lenv: &mut Lenv, lval: &mut Lval) -> Lval {
     op(lenv, lval, '%')
 }
 
 /// Common fn for arith functions
 fn op(_lenv: &mut Lenv, lval: &mut Lval, op: char) -> Lval {
-
     let mut x = lval.lval_pop();
     let iter = lval.cell.clone();
     for _i in iter.iter() {
-         let y = lval.lval_pop();
+        let y = lval.lval_pop();
         if let LvalType::LVAL_NUM(ref mut xn) = x.ltype {
             if let LvalType::LVAL_NUM(yn) = y.ltype {
                 match op {
-                    '+' => { *xn += yn; },
-                    '-' => { *xn -= yn; },
-                    '*' => { *xn *= yn; },
+                    '+' => {
+                        *xn += yn;
+                    }
+                    '-' => {
+                        *xn -= yn;
+                    }
+                    '*' => {
+                        *xn *= yn;
+                    }
                     '/' => {
                         if yn == 0.0 {
                             return Lval::lval_err("Division by Zero".to_string());
                         } else {
                             *xn /= yn;
                         }
-                    },
-                    '%' => { *xn = (*xn as i64 % yn as i64) as f64; },
-                    _ => { }
+                    }
+                    '%' => {
+                        *xn = (*xn as i64 % yn as i64) as f64;
+                    }
+                    _ => {}
                 }
             } else {
-                return Lval::lval_err(format!("Can't operate in a non number! Got {:?} expect LvalType::LVAL_NUM", y.ltype));
+                return Lval::lval_err(format!(
+                    "Can't operate in a non number! Got {:?} expect LvalType::LVAL_NUM",
+                    y.ltype
+                ));
             }
         } else {
-            return Lval::lval_err(format!("Can't operate in a non number! Got {:?} expect LvalType::LVAL_NUM", x.ltype));
+            return Lval::lval_err(format!(
+                "Can't operate in a non number! Got {:?} expect LvalType::LVAL_NUM",
+                x.ltype
+            ));
         }
     }
     x
@@ -301,117 +314,102 @@ fn lte(lenv: &mut Lenv, lval: &mut Lval) -> Lval {
     ord_op(lenv, x, y, "lte")
 }
 
-fn ord_op(_lenv: &mut Lenv, x: Lval, y: Lval, op: &str) -> Lval{
-
+fn ord_op(_lenv: &mut Lenv, x: Lval, y: Lval, op: &str) -> Lval {
     match (x.ltype, y.ltype) {
-        (LvalType::LVAL_NUM(a), LvalType::LVAL_NUM(b)) => {
-            match op {
-                "gt" => {
-                    if a > b {
-                        Lval::lval_bool(true)
-                    } else {
-                        Lval::lval_bool(false)
-                    }
-                },
-                "lt" => {
-                    if a < b {
-                        Lval::lval_bool(true)
-                    } else {
-                        Lval::lval_bool(false)
-                    }
-                },
-                "gte" => {
-                    if a >= b {
-                        Lval::lval_bool(true)
-                    } else {
-                        Lval::lval_bool(false)
-                    }
-                },
-                "lte" => {
-                    if a <= b {
-                        Lval::lval_bool(true)
-                    } else {
-                        Lval::lval_bool(false)
-                    }
-                },
-                _ => {
-                    Lval::lval_err(format!("not a symbol"))
+        (LvalType::LVAL_NUM(a), LvalType::LVAL_NUM(b)) => match op {
+            "gt" => {
+                if a > b {
+                    Lval::lval_bool(true)
+                } else {
+                    Lval::lval_bool(false)
                 }
             }
-        },
-        (LvalType::LVAL_STRING(a), LvalType::LVAL_STRING(b)) => {
-            match op {
-                "gt" => {
-                    if a > b {
-                        Lval::lval_bool(true)
-                    } else {
-                        Lval::lval_bool(false)
-                    }
-                },
-                "lt" => {
-                    if a < b {
-                        Lval::lval_bool(true)
-                    } else {
-                        Lval::lval_bool(false)
-                    }
-                },
-                "gte" => {
-                    if a >= b {
-                        Lval::lval_bool(true)
-                    } else {
-                        Lval::lval_bool(false)
-                    }
-                },
-                "lte" => {
-                    if a <= b {
-                        Lval::lval_bool(true)
-                    } else {
-                        Lval::lval_bool(false)
-                    }
-                },
-                _ => {
-                    Lval::lval_err(format!("not a symbol"))
+            "lt" => {
+                if a < b {
+                    Lval::lval_bool(true)
+                } else {
+                    Lval::lval_bool(false)
                 }
             }
-        },
-        (LvalType::LVAL_QEXPR, LvalType::LVAL_QEXPR) => {
-            match op {
-                "gt" => {
-                    if x.cell.len() > y.cell.len() {
-                        Lval::lval_bool(true)
-                    } else {
-                        Lval::lval_bool(false)
-                    }
-                },
-                "lt" => {
-                    if x.cell.len() < y.cell.len() {
-                        Lval::lval_bool(true)
-                    } else {
-                        Lval::lval_bool(false)
-                    }
-                },
-                "gte" => {
-                    if x.cell.len() >= y.cell.len() {
-                        Lval::lval_bool(true)
-                    } else {
-                        Lval::lval_bool(false)
-                    }
-                },
-                "lte" => {
-                    if x.cell.len() <= y.cell.len() {
-                        Lval::lval_bool(true)
-                    } else {
-                        Lval::lval_bool(false)
-                    }
-                },
-                _ => {
-                    Lval::lval_err(format!("not a symbol"))
+            "gte" => {
+                if a >= b {
+                    Lval::lval_bool(true)
+                } else {
+                    Lval::lval_bool(false)
                 }
             }
+            "lte" => {
+                if a <= b {
+                    Lval::lval_bool(true)
+                } else {
+                    Lval::lval_bool(false)
+                }
+            }
+            _ => Lval::lval_err(format!("not a symbol")),
         },
-        _ => {
-            Lval::lval_err(format!("can't compare ordered"))
-        }
+        (LvalType::LVAL_STRING(a), LvalType::LVAL_STRING(b)) => match op {
+            "gt" => {
+                if a > b {
+                    Lval::lval_bool(true)
+                } else {
+                    Lval::lval_bool(false)
+                }
+            }
+            "lt" => {
+                if a < b {
+                    Lval::lval_bool(true)
+                } else {
+                    Lval::lval_bool(false)
+                }
+            }
+            "gte" => {
+                if a >= b {
+                    Lval::lval_bool(true)
+                } else {
+                    Lval::lval_bool(false)
+                }
+            }
+            "lte" => {
+                if a <= b {
+                    Lval::lval_bool(true)
+                } else {
+                    Lval::lval_bool(false)
+                }
+            }
+            _ => Lval::lval_err(format!("not a symbol")),
+        },
+        (LvalType::LVAL_QEXPR, LvalType::LVAL_QEXPR) => match op {
+            "gt" => {
+                if x.cell.len() > y.cell.len() {
+                    Lval::lval_bool(true)
+                } else {
+                    Lval::lval_bool(false)
+                }
+            }
+            "lt" => {
+                if x.cell.len() < y.cell.len() {
+                    Lval::lval_bool(true)
+                } else {
+                    Lval::lval_bool(false)
+                }
+            }
+            "gte" => {
+                if x.cell.len() >= y.cell.len() {
+                    Lval::lval_bool(true)
+                } else {
+                    Lval::lval_bool(false)
+                }
+            }
+            "lte" => {
+                if x.cell.len() <= y.cell.len() {
+                    Lval::lval_bool(true)
+                } else {
+                    Lval::lval_bool(false)
+                }
+            }
+            _ => Lval::lval_err(format!("not a symbol")),
+        },
+        _ => Lval::lval_err(format!("can't compare ordered")),
     }
 }
 
@@ -420,15 +418,9 @@ fn lif(lenv: &mut Lenv, lval: &mut Lval) -> Lval {
     lval.cell[2].ltype = LvalType::LVAL_SEXPR;
 
     match lval.cell[0].ltype {
-        LvalType::LVAL_BOOL(b) => {
-            match b {
-                true => {
-                    lval_eval::lval_eval(lenv, &mut lval.lval_pop_with_index(1))
-                },
-                false => {
-                    lval_eval::lval_eval(lenv, &mut lval.lval_pop_with_index(2))
-                }
-            }
+        LvalType::LVAL_BOOL(b) => match b {
+            true => lval_eval::lval_eval(lenv, &mut lval.lval_pop_with_index(1)),
+            false => lval_eval::lval_eval(lenv, &mut lval.lval_pop_with_index(2)),
         },
         LvalType::LVAL_NUM(n) => {
             if n == 0.0 {
@@ -436,10 +428,8 @@ fn lif(lenv: &mut Lenv, lval: &mut Lval) -> Lval {
             } else {
                 lval_eval::lval_eval(lenv, &mut lval.lval_pop_with_index(2))
             }
-        },
-        _ => {
-            Lval::lval_err(format!("first argument dont evaluetes to bool"))
         }
+        _ => Lval::lval_err(format!("first argument dont evaluetes to bool")),
     }
 }
 
@@ -458,16 +448,16 @@ fn lif(lenv: &mut Lenv, lval: &mut Lval) -> Lval {
 /// ```
 fn head(_lenv: &mut Lenv, lval: &mut Lval) -> Lval {
     if lval.cell.len() > 1 {
-        return Lval::lval_error_argssize(lval.cell.len(), 1)
+        return Lval::lval_error_argssize(lval.cell.len(), 1);
     }
 
     let mut qexpr = lval.lval_pop();
     if qexpr.ltype != LvalType::LVAL_QEXPR {
-        return Lval::lval_error_type(qexpr.ltype, LvalType::LVAL_QEXPR)
+        return Lval::lval_error_type(qexpr.ltype, LvalType::LVAL_QEXPR);
     }
 
     if qexpr.cell.len() == 0 {
-         return Lval::lval_error_empty_qexpr("lval_builtin::head".to_string(), qexpr)
+        return Lval::lval_error_empty_qexpr("lval_builtin::head".to_string(), qexpr);
     }
 
     let mut head = Lval::lval_qexpr();
@@ -488,19 +478,18 @@ fn head(_lenv: &mut Lenv, lval: &mut Lval) -> Lval {
 /// let head_of_tail = eval_rispreter(&mut builtins, "(head (tail {1 2 3}))".to_string());
 /// assert_eq!(2f64, *head_of_tail.cell[0]);
 /// ```
-fn tail(_env: &mut Lenv, lval: &mut Lval) ->  Lval {
+fn tail(_env: &mut Lenv, lval: &mut Lval) -> Lval {
     if lval.cell.len() > 1 {
-        return Lval::lval_error_argssize(lval.cell.len(), 1)
+        return Lval::lval_error_argssize(lval.cell.len(), 1);
     }
 
     let mut qexpr = lval.lval_pop();
     if qexpr.ltype != LvalType::LVAL_QEXPR {
-        return Lval::lval_error_type(qexpr.ltype, LvalType::LVAL_QEXPR)
+        return Lval::lval_error_type(qexpr.ltype, LvalType::LVAL_QEXPR);
     }
 
-
     if qexpr.cell.len() == 0 {
-         return Lval::lval_error_empty_qexpr("lval_builtin::tail".to_string(), qexpr)
+        return Lval::lval_error_empty_qexpr("lval_builtin::tail".to_string(), qexpr);
     }
 
     let tail = qexpr.lval_split(1);
@@ -540,22 +529,22 @@ pub fn list(_env: &mut Lenv, lval: &mut Lval) -> Lval {
 /// ```
 fn join(_env: &mut Lenv, lval: &mut Lval) -> Lval {
     if lval.cell.len() != 2 {
-        return Lval::lval_error_argssize(lval.cell.len(), 2)
+        return Lval::lval_error_argssize(lval.cell.len(), 2);
     }
     if lval.cell[0].ltype != LvalType::LVAL_QEXPR {
-        return Lval::lval_error_type(lval.cell[0].ltype.clone(), LvalType::LVAL_QEXPR)
+        return Lval::lval_error_type(lval.cell[0].ltype.clone(), LvalType::LVAL_QEXPR);
     }
     if lval.cell[1].ltype != LvalType::LVAL_QEXPR {
-        return Lval::lval_error_type(lval.cell[1].ltype.clone(), LvalType::LVAL_QEXPR)
+        return Lval::lval_error_type(lval.cell[1].ltype.clone(), LvalType::LVAL_QEXPR);
     }
 
     let mut y = lval.lval_pop();
     if y.cell.len() == 0 {
-         return Lval::lval_error_empty_qexpr("right arg at lval_builtin::join".to_string(), y)
+        return Lval::lval_error_empty_qexpr("right arg at lval_builtin::join".to_string(), y);
     }
     let mut x = lval.lval_pop();
     if x.cell.len() == 0 {
-         return Lval::lval_error_empty_qexpr("left arg at lval_builtin::join".to_string(), x)
+        return Lval::lval_error_empty_qexpr("left arg at lval_builtin::join".to_string(), x);
     }
 
     y.cell.append(&mut x.cell);
@@ -577,10 +566,10 @@ fn join(_env: &mut Lenv, lval: &mut Lval) -> Lval {
 /// ```
 fn cons(_env: &mut Lenv, lval: &mut Lval) -> Lval {
     if lval.cell.len() != 2 {
-        return Lval::lval_error_argssize(lval.cell.len(), 2)
+        return Lval::lval_error_argssize(lval.cell.len(), 2);
     }
     if lval.cell[1].ltype != LvalType::LVAL_QEXPR {
-        return Lval::lval_error_type(lval.cell[1].ltype.clone(), LvalType::LVAL_QEXPR)
+        return Lval::lval_error_type(lval.cell[1].ltype.clone(), LvalType::LVAL_QEXPR);
     }
     let x = lval.lval_pop();
     let mut qexpr = lval.lval_pop();
@@ -606,7 +595,7 @@ pub fn eval(env: &mut Lenv, lval: &mut Lval) -> Lval {
     //     return Lval::lval_error_argssize(lval.cell.len(), 1)
     // }
     if lval.cell[0].ltype != LvalType::LVAL_QEXPR {
-        return Lval::lval_error_type(lval.cell[0].ltype.clone(), LvalType::LVAL_QEXPR)
+        return Lval::lval_error_type(lval.cell[0].ltype.clone(), LvalType::LVAL_QEXPR);
     }
 
     let mut x = lval.lval_take(0);
@@ -617,7 +606,6 @@ pub fn eval(env: &mut Lenv, lval: &mut Lval) -> Lval {
 fn def(env: &mut Lenv, lval: &mut Lval) -> Lval {
     var(env, lval, "def")
 }
-
 
 /// Binds the n symbols of an Q-expression in its followings bindings.
 /// # Examples
@@ -638,25 +626,30 @@ fn put(env: &mut Lenv, lval: &mut Lval) -> Lval {
 }
 
 fn var(env: &mut Lenv, lval: &mut Lval, func: &str) -> Lval {
-    if let LvalType::LVAL_QEXPR = &lval.cell[0].ltype {} else {
-        return Lval::lval_err(format!("not a Q-expression got {}, expect {}", lval.ltype, LvalType::LVAL_QEXPR))
+    if let LvalType::LVAL_QEXPR = &lval.cell[0].ltype {
+    } else {
+        return Lval::lval_err(format!(
+            "not a Q-expression got {}, expect {}",
+            lval.ltype,
+            LvalType::LVAL_QEXPR
+        ));
     }
     let left_len = lval.cell[0].cell.len();
     let mut right_len = 0;
     for _ in 1..lval.cell.len() {
-        right_len+=1;
+        right_len += 1;
     }
     if left_len != right_len {
         return Lval::lval_err(format!("'def' expects a equal number of bindings. Got left: {} right: {}, expects left: {} right: {}",
-                                    left_len, right_len, left_len, left_len))
+                                    left_len, right_len, left_len, left_len));
     }
 
     for cell in lval.cell[0].cell.clone() {
         match cell.ltype {
-            LvalType::LVAL_SYM(_sym) => {continue;},
-            _=> {
-                return Lval::lval_error_type(cell.ltype, LvalType::LVAL_SYM("symbol".to_string()))
+            LvalType::LVAL_SYM(_sym) => {
+                continue;
             }
+            _ => return Lval::lval_error_type(cell.ltype, LvalType::LVAL_SYM("symbol".to_string())),
         }
     }
 
@@ -667,15 +660,12 @@ fn var(env: &mut Lenv, lval: &mut Lval, func: &str) -> Lval {
             match func {
                 "def" => {
                     env.def(str.to_string(), *lval.cell[i].clone());
-                },
+                }
                 "put" => {
                     env.put(str.to_string(), *lval.cell[i].clone());
-                },
-                _ => {
-
                 }
+                _ => {}
             }
-
         }
     }
     Lval::lval_sexpr()
@@ -701,7 +691,10 @@ mod tests {
         let one = Lval::lval_num(1.0);
         let two = Lval::lval_num(2.0);
         let three = Lval::lval_num(3.0);
-        top.add_cell(plus_op).add_cell(one).add_cell(two).add_cell(three);
+        top.add_cell(plus_op)
+            .add_cell(one)
+            .add_cell(two)
+            .add_cell(three);
 
         assert_eq!(top.cell.len(), 4);
         top.lval_pop();
@@ -720,7 +713,10 @@ mod tests {
         let one = Lval::lval_num(4.0);
         let two = Lval::lval_num(2.0);
         let three = Lval::lval_num(1.0);
-        top.add_cell(sub_op).add_cell(one).add_cell(two).add_cell(three);
+        top.add_cell(sub_op)
+            .add_cell(one)
+            .add_cell(two)
+            .add_cell(three);
 
         assert_eq!(top.cell.len(), 4);
         top.lval_pop();
@@ -739,7 +735,10 @@ mod tests {
         let one = Lval::lval_num(1.0);
         let two = Lval::lval_num(2.0);
         let three = Lval::lval_num(4.0);
-        top.add_cell(mult_op).add_cell(one).add_cell(two).add_cell(three);
+        top.add_cell(mult_op)
+            .add_cell(one)
+            .add_cell(two)
+            .add_cell(three);
 
         assert_eq!(top.cell.len(), 4);
         top.lval_pop();
@@ -758,7 +757,10 @@ mod tests {
         let one = Lval::lval_num(9.0);
         let two = Lval::lval_num(5.0);
         let three = Lval::lval_num(2.0);
-        top.add_cell(div_op).add_cell(one).add_cell(two).add_cell(three);
+        top.add_cell(div_op)
+            .add_cell(one)
+            .add_cell(two)
+            .add_cell(three);
 
         assert_eq!(top.cell.len(), 4);
         top.lval_pop();

@@ -1,5 +1,5 @@
-use crate::lval::lval_def::*;
 use crate::lval::lval_builtin;
+use crate::lval::lval_def::*;
 use crate::lval::lval_env::Lenv;
 
 pub fn lval_eval(lenv: &mut Lenv, lval: &mut Lval) -> Lval {
@@ -7,10 +7,10 @@ pub fn lval_eval(lenv: &mut Lenv, lval: &mut Lval) -> Lval {
         LvalType::LVAL_SYM(sym) => {
             let x = lenv.get(sym.to_string());
             x
-        },
+        }
         LvalType::LVAL_SEXPR => {
             return lval_eval_sexpr(lenv, lval);
-        },
+        }
         _ => {
             return lval.clone();
         }
@@ -18,15 +18,13 @@ pub fn lval_eval(lenv: &mut Lenv, lval: &mut Lval) -> Lval {
 }
 
 pub fn lval_eval_sexpr(lenv: &mut Lenv, lval: &mut Lval) -> Lval {
-
     for i in 0..lval.cell.len() {
         lval.cell[i] = Box::new(lval_eval(lenv, &mut lval.cell[i]));
     }
 
-
     for i in 0..lval.cell.len() {
         if let LvalType::LVAL_ERR(_err) = &lval.cell[i].ltype {
-            return lval.lval_take(i)
+            return lval.lval_take(i);
         } else {
             continue;
         }
@@ -41,20 +39,21 @@ pub fn lval_eval_sexpr(lenv: &mut Lenv, lval: &mut Lval) -> Lval {
         // }
     }
 
-    if lval.cell.len() == 0 { return lval.clone(); }
-    if lval.cell.len() == 1 { return lval.lval_take(0); }
+    if lval.cell.len() == 0 {
+        return lval.clone();
+    }
+    if lval.cell.len() == 1 {
+        return lval.lval_take(0);
+    }
 
     let mut f = lval.lval_pop();
     lval_call(lenv, &mut f, lval)
 }
 
 pub fn lval_call(lenv: &mut Lenv, f: &mut Lval, lval: &mut Lval) -> Lval {
-
     match f.ltype.clone() {
         // if builtin we return
-        LvalType::LVAL_FUN(builtin) => {
-            builtin.clone().0(lenv, lval)
-        },
+        LvalType::LVAL_FUN(builtin) => builtin.clone().0(lenv, lval),
         // if we have a lambda expression then...
         LvalType::LVAL_LAMBDA(mut lambda) => {
             // record argument counts
@@ -63,10 +62,12 @@ pub fn lval_call(lenv: &mut Lenv, f: &mut Lval, lval: &mut Lval) -> Lval {
 
             // while arguments still to be processed
             while lval.cell.len() > 0 {
-
                 // if we ran out of formal arguments to bind
                 if lambda.formals.cell.len() == 0 {
-                    return Lval::lval_err(format!("Function passed to many argyments. Got {}, expect {}", given, total))
+                    return Lval::lval_err(format!(
+                        "Function passed to many argyments. Got {}, expect {}",
+                        given, total
+                    ));
                 }
 
                 // pop the first symbol from the formals
@@ -76,7 +77,9 @@ pub fn lval_call(lenv: &mut Lenv, f: &mut Lval, lval: &mut Lval) -> Lval {
                     if s == "&" {
                         //TODO: ensure its followd by another symbol
                         let next_sym = lambda.formals.lval_pop();
-                        lambda.local_lenv.put(next_sym.to_string(), lval_builtin::list(lenv, lval));
+                        lambda
+                            .local_lenv
+                            .put(next_sym.to_string(), lval_builtin::list(lenv, lval));
                         break;
                     }
                 }
@@ -86,12 +89,15 @@ pub fn lval_call(lenv: &mut Lenv, f: &mut Lval, lval: &mut Lval) -> Lval {
 
                 // bind a copy to the lambda local env
                 lambda.local_lenv.put(sym.to_string(), val);
-            };
+            }
 
-            if lambda.formals.cell.len() > 0 &&
-            lambda.formals.cell[0].ltype == LvalType::LVAL_SYM("&".to_string()) {
+            if lambda.formals.cell.len() > 0
+                && lambda.formals.cell[0].ltype == LvalType::LVAL_SYM("&".to_string())
+            {
                 if lambda.formals.cell.len() != 2 {
-                    return Lval::lval_err(format!("Function format invalid. Symbol '&' not followed by single symbol"))
+                    return Lval::lval_err(format!(
+                        "Function format invalid. Symbol '&' not followed by single symbol"
+                    ));
                 }
                 lambda.formals.lval_pop();
                 let sym = lambda.formals.lval_pop();
@@ -101,34 +107,20 @@ pub fn lval_call(lenv: &mut Lenv, f: &mut Lval, lval: &mut Lval) -> Lval {
 
             // if all formals have been bound evaluate
             if lambda.formals.cell.len() == 0 {
-
-                for child in lenv.children() {
-                    child.detach();
-                }
-
-                // match lenv.first_child() {
-                //     Some(child) => {
-                //         child.detach();
-                //     },
-                //     None => {
-                //
-                //     }
-                // }
-
                 // apend the lambda local env to parent env
-                lenv.append(*lambda.local_lenv);
+                lambda.local_lenv.set_parent(lenv);
 
                 // evaluetes in this new context
-                return lval_builtin::eval(&mut lenv.first_child().unwrap(), Lval::lval_sexpr().add_cell(*lambda.body.clone()))
-
+                return lval_builtin::eval(
+                    &mut lambda.local_lenv,
+                    Lval::lval_sexpr().add_cell(*lambda.body.clone()),
+                );
             } else {
                 // returns a partially bound evalueted lambda
-                return Lval::lval_lambda_copy(*lambda.local_lenv, *lambda.formals, *lambda.body)
+                return Lval::lval_lambda_copy(*lambda.local_lenv, *lambda.formals, *lambda.body);
             }
-        },
-        _ => {
-            Lval::lval_err(format!("Not a builtin function or a lambda"))
         }
+        _ => Lval::lval_err(format!("Not a builtin function or a lambda")),
     }
 }
 
@@ -188,7 +180,10 @@ pub mod tests {
         let third_one = Lval::lval_sym("+".to_string());
         let third_two = Lval::lval_num(2.0);
         let third_three = Lval::lval_num(3.0);
-        third.add_cell(third_one).add_cell(third_two).add_cell(third_three);
+        third
+            .add_cell(third_one)
+            .add_cell(third_two)
+            .add_cell(third_three);
         top.add_cell(first).add_cell(second).add_cell(third);
         let res = lval_eval(&mut env, &mut top);
         assert_eq!(res.ltype, LvalType::LVAL_NUM(6.0));

@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate nom;
 
-use nom::{digit, alphanumeric, multispace, AsChar, anychar};
+use nom::{alphanumeric, anychar, digit, multispace, AsChar};
 
 use std::str;
 use std::str::FromStr;
@@ -20,6 +20,7 @@ pub enum Risp {
     LSyntaxErr(String),
     LChar(char),
     LComment(String),
+    LBool(bool),
     Sexpr(Vec<Risp>),
     Qexpr(Vec<Risp>),
 }
@@ -78,38 +79,38 @@ pub enum Prelude {
 named!(
     prelude_keywords<Prelude>,
     alt!(
-    map!(tag!("\\"), {|_| Prelude::Lambda}) |
-    map!(tag!("list"), {|_| Prelude::List}) |
-    map!(tag!("head"), {|_| Prelude::Head}) |
-    map!(tag!("tail"), {|_| Prelude::Tail}) |
-    map!(tag!("eval"), {|_| Prelude::Eval}) |
-    map!(tag!("join"), {|_| Prelude::Join}) |
-    map!(tag!("var"), {|_| Prelude::Var}) |
-    map!(tag!("def"), {|_| Prelude::Def}) |
-    map!(tag!("put"), {|_| Prelude::Put}) |
-    map!(tag!("+"), {|_| Prelude::Add}) |
-    map!(tag!("-"), {|_| Prelude::Sub}) |
-    map!(tag!("%"), {|_| Prelude::Mod}) |
-    map!(tag!("*"), {|_| Prelude::Mul}) |
-    map!(tag!("/"), {|_| Prelude::Div}) |
-    map!(tag!("^"), {|_| Prelude::BitXor}) |
-    map!(tag!("&"), {|_| Prelude::BitAnd}) |
-    map!(tag!("|"), {|_| Prelude::BitOr}) |
-    map!(tag!("!"), {|_| Prelude::BitNot}) |
-    map!(tag!("&&"), {|_| Prelude::And}) |
-    map!(tag!("||"), {|_| Prelude::Or}) |
-    map!(tag!("!!"), {|_| Prelude::Not}) |
-    map!(tag!("neg"), {|_| Prelude::Neg}) |
-    map!(tag!("<"), {|_| Prelude::Ltt}) |
-    map!(tag!(">"), {|_| Prelude::Gtt}) |
-    map!(tag!(">="), {|_| Prelude::Gte}) |
-    map!(tag!("<="), {|_| Prelude::Lte}) |
-    map!(tag!("=="), {|_| Prelude::Equ}) |
-    map!(tag!("!="), {|_| Prelude::Neq}) |
-    map!(tag!("if"), {|_| Prelude::If}) |
-    map!(tag!("load"), {|_| Prelude::Load}) |
-    map!(tag!("print"), {|_| Prelude::Print}) |
-    map!(tag!("error"), {|_| Prelude::Error})
+        map!(tag!("\\"), { |_| Prelude::Lambda })
+            | map!(tag!("list"), { |_| Prelude::List })
+            | map!(tag!("head"), { |_| Prelude::Head })
+            | map!(tag!("tail"), { |_| Prelude::Tail })
+            | map!(tag!("eval"), { |_| Prelude::Eval })
+            | map!(tag!("join"), { |_| Prelude::Join })
+            | map!(tag!("var"), { |_| Prelude::Var })
+            | map!(tag!("def"), { |_| Prelude::Def })
+            | map!(tag!("put"), { |_| Prelude::Put })
+            | map!(tag!("+"), { |_| Prelude::Add })
+            | map!(tag!("-"), { |_| Prelude::Sub })
+            | map!(tag!("%"), { |_| Prelude::Mod })
+            | map!(tag!("*"), { |_| Prelude::Mul })
+            | map!(tag!("/"), { |_| Prelude::Div })
+            | map!(tag!("^"), { |_| Prelude::BitXor })
+            | map!(tag!("&"), { |_| Prelude::BitAnd })
+            | map!(tag!("|"), { |_| Prelude::BitOr })
+            | map!(tag!("!"), { |_| Prelude::BitNot })
+            | map!(tag!("&&"), { |_| Prelude::And })
+            | map!(tag!("||"), { |_| Prelude::Or })
+            | map!(tag!("!!"), { |_| Prelude::Not })
+            | map!(tag!("neg"), { |_| Prelude::Neg })
+            | map!(tag!("<"), { |_| Prelude::Ltt })
+            | map!(tag!(">"), { |_| Prelude::Gtt })
+            | map!(tag!(">="), { |_| Prelude::Gte })
+            | map!(tag!("<="), { |_| Prelude::Lte })
+            | map!(tag!("=="), { |_| Prelude::Equ })
+            | map!(tag!("!="), { |_| Prelude::Neq })
+            | map!(tag!("if"), { |_| Prelude::If })
+            | map!(tag!("load"), { |_| Prelude::Load })
+            | map!(tag!("print"), { |_| Prelude::Print })
+            | map!(tag!("error"), { |_| Prelude::Error })
     )
 );
 
@@ -138,17 +139,12 @@ named!(
 // TODO: implement prelude enums
 named!(
     symbol<SymbolKind>,
-    alt!(
-        map!(user_symbol, |u| {SymbolKind::User(u)}) |
-        map!(user_symbol, |p| {SymbolKind::User(p)} ))
+    alt!(map!(user_symbol, |u| SymbolKind::User(u)) | map!(user_symbol, |p| SymbolKind::User(p)))
 );
 
 named!(
     lchar<Risp>,
-    map!(
-        anychar,
-        |c: char| Risp::LChar(c.as_char())
-    )
+    map!(anychar, |c: char| Risp::LChar(c.as_char()))
 );
 
 // string
@@ -167,13 +163,13 @@ named!(
     )
 );
 
-
 named!(
     unsigned_float<f64>,
     map_res!(
         map_res!(
             recognize!(alt!(
-                delimited!(digit, tag!("."), opt!(digit)) | delimited!(opt!(digit), tag!("."), digit)
+                delimited!(digit, tag!("."), opt!(digit))
+                    | delimited!(opt!(digit), tag!("."), digit)
             )),
             str::from_utf8
         ),
@@ -186,8 +182,9 @@ named!(
     map!(
         pair!(opt!(alt!(tag!("+") | tag!("-"))), unsigned_float),
         |(sign, value): (Option<&[u8]>, f64)| sign
-        .and_then(|s| if s[0] == b'-' { Some(-1f64)} else { None })
-        .unwrap_or(1f64) * value
+            .and_then(|s| if s[0] == b'-' { Some(-1f64) } else { None })
+            .unwrap_or(1f64)
+            * value
     )
 );
 
@@ -195,9 +192,7 @@ named!(
 named!(
     unsigned_int<i64>,
     map_res!(
-        map_res!(
-            recognize!(digit), str::from_utf8
-        ),
+        map_res!(recognize!(digit), str::from_utf8),
         FromStr::from_str
     )
 );
@@ -207,8 +202,9 @@ named!(
     map!(
         pair!(opt!(alt!(tag!("+") | tag!("-"))), unsigned_int),
         |(sign, value): (Option<&[u8]>, i64)| sign
-        .and_then(|s| if s[0] == b'-' { Some(-1i64)} else { None })
-        .unwrap_or(1i64) * value
+            .and_then(|s| if s[0] == b'-' { Some(-1i64) } else { None })
+            .unwrap_or(1i64)
+            * value
     )
 );
 
@@ -221,13 +217,28 @@ named!(
     )
 );
 
+named!(
+    lbool<Risp>,
+    do_parse!(
+        b: alt!(tag!("true") | tag!("false"))
+            >> ({
+                if b == &b"true"[..] {
+                    Risp::LBool(true)
+                } else if b == &b"false"[..] {
+                    Risp::LBool(false)
+                } else {
+                    Risp::LSyntaxErr("not a bool".to_string())
+                }
+            })
+    )
+);
 
 named!(
     sexpr<Vec<Risp>>,
     delimited!(
-            terminated!(tag!("("), opt!(multispace)),
-            separated_list!(multispace, lval),
-            preceded!(opt!(multispace), tag!(")"))
+        terminated!(tag!("("), opt!(multispace)),
+        separated_list!(multispace, lval),
+        preceded!(opt!(multispace), tag!(")"))
     )
 );
 
@@ -245,6 +256,7 @@ named!(
     lval<Risp>,
     alt!(
         number |
+        lbool |
         string => {|sr| Risp::LString(String::from(sr))} |
         symbol => {|s| Risp::LSymbol(s)} |
         sexpr => {|sx| Risp::Sexpr(sx)} |

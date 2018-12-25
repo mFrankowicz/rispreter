@@ -3,4 +3,5 @@
 members = [
 	"rispreter-parser",
 	"rispreter-repl",
+	"rispreter-env"
 ]

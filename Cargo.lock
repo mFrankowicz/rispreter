@@ -342,6 +342,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "rispreter-env"
+version = "0.1.0"
+
+[[package]]
 name = "rispreter-parser"
 version = "0.1.0"
 dependencies = [
