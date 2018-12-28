@@ -1,6 +1,7 @@
 use crate::lval::lval_def::*;
+use crate::lval::lval_env::Lenv;
 
-#[derive(PartialEq, Debug, Clone)]
+#[derive(Debug, Clone)]
 pub struct LLambda {
     pub local_lenv: Box<Lenv>,
     pub formals: Box<Lval>,
@@ -13,6 +14,25 @@ impl LLambda {
             local_lenv: Box::new(Lenv::new()),
             formals: Box::new(formals),
             body: Box::new(body),
+        }
+    }
+
+    pub fn llambda_copy(env: Lenv, formals: Lval, body: Lval) -> Self {
+        LLambda {
+            local_lenv: Box::new(env),
+            formals: Box::new(formals),
+            body: Box::new(body),
+        }
+    }
+}
+
+impl PartialEq for LLambda {
+    fn eq(&self, other: &LLambda) -> bool {
+        if self.body == other.body &&
+        self.formals == other.formals {
+            true
+        } else {
+            false
         }
     }
 }

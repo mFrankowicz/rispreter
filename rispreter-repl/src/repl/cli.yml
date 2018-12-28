@@ -1,0 +1,9 @@
+name: rispreter
+version: "0.0.1"
+author: Marcos Frankowicz <marcosfrankowicz@gmail.com>
+about: Lisp-like interpreter writen in Rust
+args:
+  - INPUT_FILE:
+      help: Path to .rspr file to load into repl environment
+      required: false
+      index: 1

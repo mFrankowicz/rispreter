@@ -1,22 +1,16 @@
-use crate::lval::lval_def::*;
 use crate::lval::lval_builtin;
+use crate::lval::lval_def::*;
+use crate::lval::lval_env::Lenv;
 
 pub fn lval_eval(lenv: &mut Lenv, lval: &mut Lval) -> Lval {
     match &lval.ltype {
         LvalType::LVAL_SYM(sym) => {
-            let x = lenv.get(&sym);
-            match x {
-                Some(v) => {
-                    return *v.clone();
-                },
-                None => {
-                    return Lval::lval_err(format!("Can't find {:?}", sym));
-                }
-            }
-        },
+            let x = lenv.get(sym.to_string());
+            x
+        }
         LvalType::LVAL_SEXPR => {
             return lval_eval_sexpr(lenv, lval);
-        },
+        }
         _ => {
             return lval.clone();
         }
@@ -24,15 +18,13 @@ pub fn lval_eval(lenv: &mut Lenv, lval: &mut Lval) -> Lval {
 }
 
 pub fn lval_eval_sexpr(lenv: &mut Lenv, lval: &mut Lval) -> Lval {
-
     for i in 0..lval.cell.len() {
         lval.cell[i] = Box::new(lval_eval(lenv, &mut lval.cell[i]));
     }
 
-
     for i in 0..lval.cell.len() {
         if let LvalType::LVAL_ERR(_err) = &lval.cell[i].ltype {
-            return lval.lval_take(i)
+            return lval.lval_take(i);
         } else {
             continue;
         }
@@ -47,36 +39,44 @@ pub fn lval_eval_sexpr(lenv: &mut Lenv, lval: &mut Lval) -> Lval {
         // }
     }
 
-    if lval.cell.len() == 0 { return lval.clone(); }
-    if lval.cell.len() == 1 { return lval.lval_take(0); }
+    if lval.cell.len() == 0 {
+        return lval.clone();
+    }
+    if lval.cell.len() == 1 {
+        return lval.lval_take(0);
+    }
 
     let mut f = lval.lval_pop();
     lval_call(lenv, &mut f, lval)
 }
 
 pub fn lval_call(lenv: &mut Lenv, f: &mut Lval, lval: &mut Lval) -> Lval {
-    //TODO: this should'nt be cloned
     match f.ltype.clone() {
         // if builtin we return
-        LvalType::LVAL_FUN(builtin) => {
-            builtin.clone().0(lenv, lval)
-        },
+        LvalType::LVAL_FUN(builtin) => builtin.clone().0(lenv, lval),
         // if we have a lambda expression then...
         LvalType::LVAL_LAMBDA(mut lambda) => {
             // record argument counts
             let given = lval.cell.len();
             let total = lambda.formals.cell.len();
+<<<<<<< HEAD
             //println!("given {}", given);
             //println!("total {}", total);
+=======
+>>>>>>> d6a387a9d9c11565ded166d5e1cfac34b265a0f2
 
             // while arguments still to be processed
             while lval.cell.len() > 0 {
                 // if we ran out of formal arguments to bind
                 if lambda.formals.cell.len() == 0 {
-                    return Lval::lval_err(format!("Function passed to many argyments. Got {}, expect {}", given, total))
+                    return Lval::lval_err(format!(
+                        "Function passed to many argyments. Got {}, expect {}",
+                        given, total
+                    ));
                 }
 
                 // pop the first symbol from the formals
+<<<<<<< HEAD
                 // println!("lambda args formals count: {}", lambda.formals.cell.len());
                 let sym = lambda.formals.lval_pop();
                 // println!("lambda args formals count after pop: {}", lambda.formals.cell.len());
@@ -87,25 +87,58 @@ pub fn lval_call(lenv: &mut Lenv, f: &mut Lval, lval: &mut Lval) -> Lval {
                 let val = lval.lval_pop();
                 // println!("lval args count after pop: {}", lval.cell.len());
                 // println!("{:?}", val.clone());
+=======
+                let sym = lambda.formals.lval_pop();
+
+                if let LvalType::LVAL_SYM(s) = &sym.ltype {
+                    if s == "&" {
+                        //TODO: ensure its followd by another symbol
+                        let next_sym = lambda.formals.lval_pop();
+                        lambda
+                            .local_lenv
+                            .put(next_sym.to_string(), lval_builtin::list(lenv, lval));
+                        break;
+                    }
+                }
+
+                //pop the next argument from the list
+                let val = lval.lval_pop();
+
+>>>>>>> d6a387a9d9c11565ded166d5e1cfac34b265a0f2
                 // bind a copy to the lambda local env
-                lambda.local_lenv.put(sym.to_string(), Box::new(val));
-            };
+                lambda.local_lenv.put(sym.to_string(), val);
+            }
+
+            if lambda.formals.cell.len() > 0
+                && lambda.formals.cell[0].ltype == LvalType::LVAL_SYM("&".to_string())
+            {
+                if lambda.formals.cell.len() != 2 {
+                    return Lval::lval_err(format!(
+                        "Function format invalid. Symbol '&' not followed by single symbol"
+                    ));
+                }
+                lambda.formals.lval_pop();
+                let sym = lambda.formals.lval_pop();
+                let val = Lval::lval_qexpr();
+                lambda.local_lenv.put(sym.to_string(), val);
+            }
 
             // if all formals have been bound evaluate
             if lambda.formals.cell.len() == 0 {
-                //set enviroment parent to evaluation enviroment
-                // TODO: this should't be cloned
-                lambda.local_lenv.paren_env = Some(Box::new(lenv.clone()));
+                // apend the lambda local env to parent env
+                lambda.local_lenv.set_parent(lenv);
 
-                return lval_builtin::eval(&mut lambda.local_lenv, Lval::lval_sexpr().add_cell(*lambda.body.clone()))
-
+                // evaluetes in this new context
+                return lval_builtin::eval(
+                    &mut lambda.local_lenv,
+                    Lval::lval_sexpr().add_cell(*lambda.body.clone()),
+                );
             } else {
-                return f.clone()
+                // returns a partially bound evalueted lambda
+                return Lval::lval_lambda_copy(*lambda.local_lenv, *lambda.formals, *lambda.body);
             }
-        },
-        _ => {
-            Lval::lval_err(format!("Not a builtin function or a lambda"))
         }
+        _ => Lval::lval_err(format!("Not a builtin function or a lambda")),
     }
 }
 
@@ -113,6 +146,7 @@ pub fn lval_call(lenv: &mut Lenv, f: &mut Lval, lval: &mut Lval) -> Lval {
 pub mod tests {
     use super::*;
     use crate::lval::lval_builtin::*;
+    use crate::lval::lval_env::Lenv;
     // use crate::lval_def::*;
 
     #[test]
@@ -164,7 +198,10 @@ pub mod tests {
         let third_one = Lval::lval_sym("+".to_string());
         let third_two = Lval::lval_num(2.0);
         let third_three = Lval::lval_num(3.0);
-        third.add_cell(third_one).add_cell(third_two).add_cell(third_three);
+        third
+            .add_cell(third_one)
+            .add_cell(third_two)
+            .add_cell(third_three);
         top.add_cell(first).add_cell(second).add_cell(third);
         let res = lval_eval(&mut env, &mut top);
         assert_eq!(res.ltype, LvalType::LVAL_NUM(6.0));
@@ -186,6 +223,6 @@ pub mod tests {
         qexpr.add_cell(a).add_cell(b).add_cell(c);
         top.add_cell(head).add_cell(qexpr);
         let res = lval_eval(&mut env, &mut top);
-        assert_eq!(res.ltype, LvalType::LVAL_NUM(1.0));
+        assert_eq!(res.cell[0].ltype, LvalType::LVAL_NUM(1.0));
     }
 }
