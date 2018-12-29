@@ -671,11 +671,11 @@ fn var(env: &mut Lenv, lval: &mut Lval, func: &str) -> Lval {
     Lval::lval_sexpr()
 }
 
-fn lambda(env: &mut Lenv, lval: &mut Lval) -> Lval {
+fn lambda(_env: &mut Lenv, lval: &mut Lval) -> Lval {
     let formals = lval.lval_pop();
     let body = lval.lval_pop();
 
-    Lval::lval_lambda(Box::new(env.clone()), formals, body)
+    Lval::lval_lambda(formals, body)
 }
 
 #[cfg(test)]

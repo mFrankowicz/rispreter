@@ -7,6 +7,38 @@
 
 Rispreter it's my attempt to port **orangeduck/BuildYourOwnLisp** to Rust and learn some rusties and lispies (and c) along the way.
 
+#### examples:
+
+```
+; your tipical lisp dialect
+risp> (+ 1 2 3)
+6
+risp> (+ 1 (+ 2 (+ 3 4)))
+10
+```
+```
+;
+risp> (def {x} 1)
+risp> (def {y} 2)
+risp> (+ x y)
+3
+risp> ((\ {x y} {+ x y}) 1 4)
+5
+risp> ((\ {x y} {+ x y}) 1)
+(\ {y} {+ 1 y})
+risp> (def {add} (\ {x y} {+ x y}))
+()
+risp> (add 1 4)
+5
+risp> (add 3)
+(\ {y} {+ 3 y})
+risp> (def {add-ten} (add 10))
+()
+risp> (add-ten 10)
+20
+```
+
+
 #### **Contributions and corrections and everything are welcome.**
 
 There are some objectives/todos that I want to see in this project, they are (in priority order somehow?) :
@@ -16,16 +48,15 @@ There are some objectives/todos that I want to see in this project, they are (in
 - Implement the basic language as described in the guide, trying at first to stay simple and close with the data structures and logics.
 
     - or just make it work at first, that's a good sign no?
+        - ***(update)*** it's working! somehow...
+
 
 - Documentation and tests are top priority.
 
-    - I think the documentation part should come after the first refactoring i'm planning.
-
     - **Tests on everything**, to keep us sane, and in Rust's tests are fun to write.
 
-- Refactoring of the code to make it more rust like, but keeping clarity and good reasonig.
 
-    - After that we can documentate. Docs are *seksi*.
+- Refactoring of the code to make it more rust like, but keeping clarity and good reasonig.
 
 - Implement parts of *Rust Standard Library* that can make sense in the context of this project.
 
@@ -37,7 +68,8 @@ There are some objectives/todos that I want to see in this project, they are (in
 
 - Safe and unsafe rust.
 
-    - We should keep ourselves in safe rust as much as possible. Unsafe rust is for another project after we get this to the core functionality.
+    - We should keep ourselves in safe rust as much as possible. Unsafe rust is for another project after we get this to the core functionality, **(unless if there is a `struct` named *"env"* or something, then we gonna need unsafe rust)**.  
+
 
 - The **Bonus Projects • Chapter 16** of the guide shows some cool ideias that could be implemented after we get a reasonable amount of working code.
 
