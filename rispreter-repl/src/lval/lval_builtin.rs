@@ -627,6 +627,7 @@ fn put(env: &Rc<Lenv>, lval: &mut Lval) -> Lval {
 }
 
 fn var(env: &Rc<Lenv>, lval: &mut Lval, func: &str) -> Lval {
+
     if let LvalType::LVAL_QEXPR = &lval.cell[0].ltype {
     } else {
         return Lval::lval_err(format!(
@@ -670,13 +671,46 @@ fn var(env: &Rc<Lenv>, lval: &mut Lval, func: &str) -> Lval {
         }
     }
     Lval::lval_sexpr()
+
+    // if let LvalType::LVAL_QEXPR = &lval.cell[0].ltype {
+    // } else {
+    //     return Lval::lval_err(format!(
+    //         "not a Q-expression got {}, expect {}",
+    //         lval.ltype,
+    //         LvalType::LVAL_QEXPR
+    //     ));
+    // }
+    // let syms = &lval.cell[0];
+    // for i in 0..syms.cell.len() {
+    //     if let LvalType::LVAL_SYM(_s) = &syms.cell[i].ltype {
+    //     } else {
+    //         return Lval::lval_error_type(syms.cell[i].ltype.clone(), LvalType::LVAL_SYM("".to_owned()));
+    //     }
+    // }
+    // if !(syms.cell.len() == lval.cell.len()-1) {
+    //     return Lval::lval_err(format!("to many arguments for symbols"));
+    // }
+    //
+    // for i in 0..syms.cell.len() {
+    //     if let LvalType::LVAL_SYM(str) = &syms.cell[i].ltype {
+    //         match func {
+    //             "def" => {
+    //                 env.def(str.to_string(), *lval.cell[i+1].clone()).unwrap();
+    //             }
+    //             "put" => {
+    //                 env.put(str.to_string(), *lval.cell[i+1].clone()).unwrap();
+    //             }
+    //             _ => {}
+    //         }
+    //     }
+    // }
 }
 
-fn lambda(env: &Rc<Lenv>, lval: &mut Lval) -> Lval {
+fn lambda(_env: &Rc<Lenv>, lval: &mut Lval) -> Lval {
     let formals = lval.lval_pop();
     let body = lval.lval_pop();
 
-    Lval::lval_lambda(env, formals, body)
+    Lval::lval_lambda(formals, body)
 }
 
 #[cfg(test)]

@@ -3,15 +3,15 @@ use crate::lval::lval_env::Lenv;
 use std::rc::Rc;
 #[derive(Debug, Clone)]
 pub struct LLambda {
-    pub local_lenv: Box<Rc<Lenv>>,
+    pub local_lenv: Rc<Lenv>,
     pub formals: Box<Lval>,
     pub body: Box<Lval>
 }
 
 impl LLambda {
-    pub fn new(paren: &Rc<Lenv>, formals: Lval, body: Lval) -> Self{
+    pub fn new(formals: Lval, body: Lval) -> Self{
         LLambda {
-            local_lenv: Box::new(Lenv::from(paren)),
+            local_lenv: Lenv::new(),
             formals: Box::new(formals),
             body: Box::new(body),
         }
@@ -19,7 +19,7 @@ impl LLambda {
 
     pub fn llambda_copy(env: Rc<Lenv>, formals: Lval, body: Lval) -> Self {
         LLambda {
-            local_lenv: Box::new(env),
+            local_lenv: env,
             formals: Box::new(formals),
             body: Box::new(body),
         }

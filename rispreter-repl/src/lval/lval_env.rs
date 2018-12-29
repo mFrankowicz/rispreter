@@ -59,7 +59,7 @@ impl Lenv {
         // }
 
         // debug_define!("{} => {:?}", name, val);
-        let _ = vals.insert(id.to_owned(), val);
+        vals.insert(id.to_owned(), val);
 
 
         Ok(())
@@ -76,16 +76,26 @@ impl Lenv {
     pub fn get(&self, id: String) -> Result<Lval,String> {
         //let name = &id.lexeme;
         let vals = self.vals.borrow();
-
-        if !vals.contains_key(&id) {
+        if let Some(val) = vals.get(&id) {
+            Ok(val.clone())
+        } else {
             if let Some(ref parent) = self.parent {
-                return parent.get(id);
+                parent.get(id)
+            } else {
+                Err(format!("variable `{}` is undefined", id))
             }
-
-            return Err(format!("variable `{}` is undefined", id));
         }
 
-        Ok(vals.get(&id).cloned().unwrap())
+        // if !vals.contains_key(&id) {
+        //     if let Some(ref parent) = self.parent {
+        //         //println!("got parent at key called {}", id);
+        //         return parent.get(id);
+        //     }
+        //
+        //     return Err(format!("variable `{}` is undefined", id));
+        // }
+        //
+        // Ok(vals.get(&id).cloned().unwrap())
     }
 
     pub fn assign_at(&self, id: String, val: Lval, dist: Option<&usize>) -> Result<Lval, String> {
@@ -170,26 +180,26 @@ impl Lenv {
     }
 }
 
-impl Drop for Lenv {
-    fn drop(&mut self) {
-        let details = match self.parent {
-            Some(ref p) => match *p {
-                Parent::Strong(ref e) => format!(
-                    "Lenv::Strong (parent now has {} refs)",
-                    e.parent.as_ref().map_or(0, |p| p.refs()-1)),
-                Parent::Weak(ref w) => match w.upgrade() {
-                    Some(ref e) => format!(
-                        "Lenv::Weak (parent has {} refs)",
-                        e.parent.as_ref().map_or(0, |p| p.refs())),
-                    None => "Lenv::Unknown (parent dropped out of scope)".to_owned(),
-                }
-            },
-            None => "Lenv::Root".to_owned(),
-        };
-
-        println!("{} with keys {:?}", details, self.vals.borrow().keys());
-    }
-}
+// impl Drop for Lenv {
+//     fn drop(&mut self) {
+//         let details = match self.parent {
+//             Some(ref p) => match *p {
+//                 Parent::Strong(ref e) => format!(
+//                     "Lenv::Strong (parent now has {} refs)",
+//                     e.parent.as_ref().map_or(0, |p| p.refs()-1)),
+//                 Parent::Weak(ref w) => match w.upgrade() {
+//                     Some(ref e) => format!(
+//                         "Lenv::Weak (parent has {} refs)",
+//                         e.parent.as_ref().map_or(0, |p| p.refs())),
+//                     None => "Lenv::Unknown (parent dropped out of scope)".to_owned(),
+//                 }
+//             },
+//             None => "Lenv::Root".to_owned(),
+//         };
+//
+//         println!("{} with keys {:?}", details, self.vals.borrow().keys());
+//     }
+// }
 
 #[derive(Debug, Clone)]
 enum Parent {

@@ -154,9 +154,9 @@ impl Lval {
         }
     }
 
-    pub fn lval_lambda(paren_env: &Rc<Lenv>, formals: Lval, body: Lval) -> Lval {
+    pub fn lval_lambda(formals: Lval, body: Lval) -> Lval {
         Lval {
-            ltype: LvalType::LVAL_LAMBDA(LLambda::new(paren_env, formals, body)),
+            ltype: LvalType::LVAL_LAMBDA(LLambda::new(formals, body)),
             cell: VecDeque::new(),
         }
     }
