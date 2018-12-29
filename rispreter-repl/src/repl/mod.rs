@@ -1,7 +1,7 @@
 use crate::lval::lval_env::Lenv;
 use crate::lval::lval_builtin::*;
 use crate::eval::eval_rispreter;
-
+use std::rc::Rc;
 use std::path::Path;
 use std::fs::File;
 use std::io::prelude::*;
@@ -12,7 +12,7 @@ use linefeed::*;
 use clap::App;
 
 pub struct RispRepl {
-    env: Lenv
+    env: Rc<Lenv>
 }
 
 impl RispRepl {

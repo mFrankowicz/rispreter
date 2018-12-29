@@ -1,12 +1,13 @@
 use crate::lval::lval_builtin;
 use crate::lval::lval_def::*;
 use crate::lval::lval_env::Lenv;
+use std::rc::Rc;
 
-pub fn lval_eval(lenv: &mut Lenv, lval: &mut Lval) -> Lval {
+pub fn lval_eval(lenv: &Rc<Lenv>, lval: &mut Lval) -> Lval {
     match &lval.ltype {
         LvalType::LVAL_SYM(sym) => {
             let x = lenv.get(sym.to_string());
-            x
+            x.unwrap()
         }
         LvalType::LVAL_SEXPR => {
             return lval_eval_sexpr(lenv, lval);
@@ -17,7 +18,7 @@ pub fn lval_eval(lenv: &mut Lenv, lval: &mut Lval) -> Lval {
     }
 }
 
-pub fn lval_eval_sexpr(lenv: &mut Lenv, lval: &mut Lval) -> Lval {
+pub fn lval_eval_sexpr(lenv: &Rc<Lenv>, lval: &mut Lval) -> Lval {
     for i in 0..lval.cell.len() {
         lval.cell[i] = Box::new(lval_eval(lenv, &mut lval.cell[i]));
     }
@@ -50,7 +51,7 @@ pub fn lval_eval_sexpr(lenv: &mut Lenv, lval: &mut Lval) -> Lval {
     lval_call(lenv, &mut f, lval)
 }
 
-pub fn lval_call(lenv: &mut Lenv, f: &mut Lval, lval: &mut Lval) -> Lval {
+pub fn lval_call(lenv: &Rc<Lenv>, f: &mut Lval, lval: &mut Lval) -> Lval {
     match f.ltype.clone() {
         // if builtin we return
         LvalType::LVAL_FUN(builtin) => builtin.clone().0(lenv, lval),
@@ -59,11 +60,8 @@ pub fn lval_call(lenv: &mut Lenv, f: &mut Lval, lval: &mut Lval) -> Lval {
             // record argument counts
             let given = lval.cell.len();
             let total = lambda.formals.cell.len();
-<<<<<<< HEAD
             //println!("given {}", given);
             //println!("total {}", total);
-=======
->>>>>>> d6a387a9d9c11565ded166d5e1cfac34b265a0f2
 
             // while arguments still to be processed
             while lval.cell.len() > 0 {
@@ -76,7 +74,6 @@ pub fn lval_call(lenv: &mut Lenv, f: &mut Lval, lval: &mut Lval) -> Lval {
                 }
 
                 // pop the first symbol from the formals
-<<<<<<< HEAD
                 // println!("lambda args formals count: {}", lambda.formals.cell.len());
                 let sym = lambda.formals.lval_pop();
                 // println!("lambda args formals count after pop: {}", lambda.formals.cell.len());
@@ -87,24 +84,6 @@ pub fn lval_call(lenv: &mut Lenv, f: &mut Lval, lval: &mut Lval) -> Lval {
                 let val = lval.lval_pop();
                 // println!("lval args count after pop: {}", lval.cell.len());
                 // println!("{:?}", val.clone());
-=======
-                let sym = lambda.formals.lval_pop();
-
-                if let LvalType::LVAL_SYM(s) = &sym.ltype {
-                    if s == "&" {
-                        //TODO: ensure its followd by another symbol
-                        let next_sym = lambda.formals.lval_pop();
-                        lambda
-                            .local_lenv
-                            .put(next_sym.to_string(), lval_builtin::list(lenv, lval));
-                        break;
-                    }
-                }
-
-                //pop the next argument from the list
-                let val = lval.lval_pop();
-
->>>>>>> d6a387a9d9c11565ded166d5e1cfac34b265a0f2
                 // bind a copy to the lambda local env
                 lambda.local_lenv.put(sym.to_string(), val);
             }
@@ -120,13 +99,13 @@ pub fn lval_call(lenv: &mut Lenv, f: &mut Lval, lval: &mut Lval) -> Lval {
                 lambda.formals.lval_pop();
                 let sym = lambda.formals.lval_pop();
                 let val = Lval::lval_qexpr();
-                lambda.local_lenv.put(sym.to_string(), val);
+                lambda.local_lenv.put(sym.to_string(), val).unwrap();
             }
 
             // if all formals have been bound evaluate
             if lambda.formals.cell.len() == 0 {
                 // apend the lambda local env to parent env
-                lambda.local_lenv.set_parent(lenv);
+                //lambda.local_lenv.set_parent(lenv);
 
                 // evaluetes in this new context
                 return lval_builtin::eval(

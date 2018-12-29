@@ -2,6 +2,7 @@ use crate::lval::lval_builtin::*;
 //use std::collections::HashMap;
 use std::collections::VecDeque;
 use std::fmt;
+use std::rc::Rc;
 use crate::lval::lval_env::Lenv;
 use crate::lval::lval_lambda::LLambda;
 
@@ -153,14 +154,14 @@ impl Lval {
         }
     }
 
-    pub fn lval_lambda(_paren_env: Box<Lenv>, formals: Lval, body: Lval) -> Lval {
+    pub fn lval_lambda(paren_env: &Rc<Lenv>, formals: Lval, body: Lval) -> Lval {
         Lval {
-            ltype: LvalType::LVAL_LAMBDA(LLambda::new(formals, body)),
+            ltype: LvalType::LVAL_LAMBDA(LLambda::new(paren_env, formals, body)),
             cell: VecDeque::new(),
         }
     }
 
-    pub fn lval_lambda_copy(env: Lenv, formals: Lval, body: Lval) -> Lval {
+    pub fn lval_lambda_copy(env: Rc<Lenv>, formals: Lval, body: Lval) -> Lval {
         Lval {
             ltype: LvalType::LVAL_LAMBDA(LLambda::llambda_copy(env, formals, body)),
             cell: VecDeque::new(),

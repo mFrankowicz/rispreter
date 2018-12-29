@@ -1,118 +1,278 @@
-use crate::lval::lval_builtin::Lbuiltin;
-use crate::lval::lval_def::Lval;
 use std::collections::HashMap;
-use std::ptr;
+use std::rc::{Weak, Rc};
+use std::cell::RefCell;
+use crate::lval::lval_def::Lval;
+use crate::lval::lval_builtin::Lbuiltin;
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Default, Debug)]
 pub struct Lenv {
-    parent: *mut Lenv,
-    data: Box<HashMap<String, Lval>>,
+    parent: Option<Parent>,
+    vals: RefCell<HashMap<String, Lval>>,
 }
 
 impl Lenv {
-    pub fn new() -> Lenv {
-        Lenv {
-            parent: ptr::null_mut(),
-            data: Box::new(HashMap::new()),
+
+    pub fn new() -> Rc<Lenv> {
+        let e = Lenv::init(None);
+        // Callable::define_globals(e.as_ref());
+        //
+        // debug_create!("Lenv::Root");
+
+        e
+    }
+
+    pub fn add_builtin(&self, key: &str, b: Lbuiltin) {
+        let mut vals = self.vals.borrow_mut();
+        vals.insert(key.to_string(), Lval::lval_fun(b));
+    }
+
+    pub fn from(parent: &Rc<Lenv>) -> Rc<Lenv> {
+        let e = Lenv::init(Some(Parent::Strong(Rc::clone(parent))));
+
+        // debug_create!(
+        //     "Lenv::Strong (parent has {} refs now)",
+        //     e.parent.as_ref().map_or(0, |p| p.refs()));
+        e
+    }
+
+    pub fn from_weak(parent: &Rc<Lenv>) -> Rc<Lenv> {
+        if parent.has_weak() {
+            // debug_create!("Lenv chain already has weak reference");
+            return Lenv::from(parent)
+        }
+
+        let e = Lenv::init(Some(Parent::Weak(Rc::downgrade(parent))));
+
+        // debug_create!(
+        //     "Lenv::Weak (parent has {} refs)",
+        //     e.parent.as_ref().map_or(0, |p| p.refs()));
+
+        e
+    }
+
+    pub fn put(&self, id: String, val: Lval) -> Result<(),String> {
+        // let name = &id.lexeme;
+        let mut vals = self.vals.borrow_mut();
+
+        // if vals.contains_key(&id) {
+        //     return Err(format!("variable `{}` already defined", id));
+        // }
+
+        // debug_define!("{} => {:?}", name, val);
+        let _ = vals.insert(id.to_owned(), val);
+
+
+        Ok(())
+    }
+
+    pub fn def(&self, id: String, val: Lval) -> Result<(), String> {
+        if let Some(ref parent) = self.parent {
+            return parent.def(id, val)
+        } else {
+            self.put(id, val)
         }
     }
 
-    pub fn add_builtin(&mut self, key: &str, builtin: Lbuiltin) {
-        self.data.insert(key.to_string(), Lval::lval_fun(builtin));
+    pub fn get(&self, id: String) -> Result<Lval,String> {
+        //let name = &id.lexeme;
+        let vals = self.vals.borrow();
+
+        if !vals.contains_key(&id) {
+            if let Some(ref parent) = self.parent {
+                return parent.get(id);
+            }
+
+            return Err(format!("variable `{}` is undefined", id));
+        }
+
+        Ok(vals.get(&id).cloned().unwrap())
     }
 
-    pub fn put(&mut self, key: String, val: Lval) {
-        self.data.insert(key, val);
+    pub fn assign_at(&self, id: String, val: Lval, dist: Option<&usize>) -> Result<Lval, String> {
+        if dist.map_or(0, |d| *d) == 0 {
+            return self.assign(id, val);
+        }
+
+        let d: usize = *dist.unwrap();
+
+        if let Some(ancestor) = self.ancestor(d) {
+            return ancestor.assign(id, val);
+        }
+
+        Err(format!("ancestor is undefined at depth {}", d))
     }
 
-    pub fn def(&mut self, key: String, val: Lval) {
-        if !self.parent.is_null() {
-            unsafe { (*self.parent).def(key, val) }
-        } else {
-            self.put(key, val);
+    pub fn get_at(&self, id: String, dist: Option<&usize>) -> Result<Lval,String> {
+        if dist.is_none() {
+            return self.get_global(id);
+        }
+
+        let d = *dist.unwrap();
+
+        if d == 0 {
+            return self.get(id);
+        }
+
+        if let Some(ancestor) = self.ancestor(d) {
+            return ancestor.get(id);
+        }
+
+        Err(format!("ancestor is undefined at depth {}", d))
+    }
+
+    pub fn has_weak(&self) -> bool {
+        match self.parent {
+            Some(ref p) => p.has_weak(),
+            None => false,
         }
     }
+}
 
-    pub fn get(&self, key: String) -> Lval {
-        if let Some(val) = self.data.get(&key) {
-            val.clone()
-        } else {
-            if !self.parent.is_null() {
-                unsafe { (*self.parent).get(key) }
-            } else {
-                Lval::lval_err(format!("Can't find {}", key))
+impl Lenv {
+    fn init(parent: Option<Parent>) -> Rc<Lenv> {
+        Rc::new(Lenv {
+            parent,
+            vals: RefCell::new(HashMap::new()),
+        })
+    }
+
+    fn ancestor(&self, dist: usize) -> Option<Parent> {
+        let mut env = self.parent.clone();
+
+        for _ in 1..dist {
+            env = env?.parent();
+        }
+
+        env
+    }
+
+    fn assign(&self, id: String, val: Lval) -> Result<Lval,String> {
+        //let name = &id.lexeme;
+        let mut vals = self.vals.borrow_mut();
+
+        if !vals.contains_key(&id) {
+            if let Some(ref parent) = self.parent {
+                return parent.assign(id, val);
+            }
+
+            return Err(format!("variable `{}` is undefined", id));
+        }
+
+        let _ = vals.insert(id.to_owned(), val.clone());
+        Ok(val)
+    }
+
+    fn get_global(&self, id: String) -> Result<Lval,String> {
+        match self.parent {
+            None => self.get(id),
+            Some(ref parent) => parent.get_global(id),
+        }
+    }
+}
+
+impl Drop for Lenv {
+    fn drop(&mut self) {
+        let details = match self.parent {
+            Some(ref p) => match *p {
+                Parent::Strong(ref e) => format!(
+                    "Lenv::Strong (parent now has {} refs)",
+                    e.parent.as_ref().map_or(0, |p| p.refs()-1)),
+                Parent::Weak(ref w) => match w.upgrade() {
+                    Some(ref e) => format!(
+                        "Lenv::Weak (parent has {} refs)",
+                        e.parent.as_ref().map_or(0, |p| p.refs())),
+                    None => "Lenv::Unknown (parent dropped out of scope)".to_owned(),
+                }
+            },
+            None => "Lenv::Root".to_owned(),
+        };
+
+        println!("{} with keys {:?}", details, self.vals.borrow().keys());
+    }
+}
+
+#[derive(Debug, Clone)]
+enum Parent {
+    Strong(Rc<Lenv>),
+    Weak(Weak<Lenv>),
+}
+
+macro_rules! parent_call {
+    ($self:ident$(.$member:ident)+ $(, $arg:expr)* ) => {
+        match *$self {
+            Parent::Strong(ref e) => e$(.$member)+($($arg,)*),
+            Parent::Weak(ref w) => match w.upgrade() {
+                Some(ref e) => e$(.$member)+($($arg,)*),
+                None => panic!("parent env went out of scope"),
+            }
+        }
+    };
+}
+
+
+impl Parent {
+    fn parent(&self) -> Option<Parent> { parent_call!(self.parent.clone) }
+    fn assign(&self, id: String, val: Lval) -> Result<Lval,String> { parent_call!(self.assign, id, val) }
+    fn get(&self, id: String) -> Result<Lval,String> { parent_call!(self.get, id) }
+    fn get_global(&self, id: String) -> Result<Lval,String> { parent_call!(self.get_global, id) }
+    fn def(&self, id: String, val: Lval) -> Result<(), String> {parent_call!(self.def, id, val)}
+    fn refs(&self) -> usize {
+        match *self {
+            Parent::Strong(ref e) => Rc::strong_count(e),
+            Parent::Weak(ref w) => match w.upgrade() {
+                Some(ref e) => Rc::strong_count(e) - 1,
+                None => 0,
             }
         }
     }
 
-    pub fn set_parent(&mut self, parent: &mut Lenv) {
-        self.parent = parent as *mut Lenv;
-    }
-
-    pub fn contains(&self, key: String) -> bool {
-        self.data.contains_key(&key)
+    fn has_weak(&self) -> bool {
+        match *self {
+            Parent::Strong(ref e) => e.has_weak(),
+            Parent::Weak(_) => true,
+        }
     }
 }
 
-// impl Drop for Lenv {
-//     fn drop(&mut self) {
-//         self.parent = ptr::null_mut()
-//     }
-// }
-
 // #[cfg(test)]
-// pub mod tests {
+// mod tests {
 //     use super::*;
 //
-//     fn rec(env: &mut Lenv<&str, i32>, mut val: i32) -> Option<i32> {
-//         if val == 0 {
-//             env.get("final")
+//     fn recursive_call(env: &Rc<Lenv>) -> i32{
+//         let v = env.get("val".to_owned()).unwrap();
+//         if v == 0 {
+//             return 0;
 //         } else {
-//             let mut local_env: Lenv<&str, i32> = Lenv::new();
-//             local_env.set_parent(env);
-//             val -= 1;
-//             rec(&mut local_env, val)
-//         }
-//     }
-//
-//     fn rec_local_def(env: &mut Lenv<&str, i32>, mut val: i32) -> Option<i32> {
-//         if val == 0 {
-//             env.get("local_final")
-//         } else {
-//             let mut local_env: Lenv<&str, i32> = Lenv::new();
-//             local_env.set_parent(env);
-//             local_env.def("local_final", val + 10);
-//             val -= 1;
-//             rec_local_def(&mut local_env, val)
+//             let child = Lenv::from(&env);
+//             child.assign("val".to_owned(), v -1).unwrap();
+//             recursive_call(&child)
 //         }
 //     }
 //
 //     #[test]
-//     fn test_env() {
-//         let mut env: Lenv<&str, i32> = Lenv::new();
-//         let mut child: Lenv<&str, i32> = Lenv::new();
-//         child.set_parent(&mut env);
-//         env.put("Key", 1);
-//         env.def("Jey", 2);
-//         child.def("Xey", 3);
-//
-//         assert_eq!(Some(1), child.get("Key"));
-//         assert_eq!(Some(2), child.get("Jey"));
-//         assert_eq!(Some(3), child.get("Xey"));
+//     fn env(){
+//         let env = Lenv::new();
+//         env.define("x".to_owned(), 1).unwrap();
+//         assert_eq!(Ok(1), env.get("x".to_owned()));
+//         env.assign("x".to_owned(), 2).unwrap();
+//         assert_eq!(Ok(2), env.get("x".to_owned()));
 //     }
 //
 //     #[test]
-//     fn test_env_recursive() {
-//         let mut env: Lenv<&str, i32> = Lenv::new();
-//         env.put("final", 5);
-//         assert_eq!(Some(5), rec(&mut env, 5));
+//     fn env_parent() {
+//         let paren = Lenv::new();
+//         let child = Lenv::from(&paren);
+//         paren.define("x".to_owned(), 1).unwrap();
+//         child.define("y".to_owned(), 2).unwrap();
+//         assert_eq!(Ok(1), child.get("x".to_owned()));
+//         assert_eq!(Err("variable `y` is undefined".to_owned()), paren.get("y".to_owned()));
 //     }
 //
 //     #[test]
-//     fn test_env_recursive_local_def() {
-//         let mut env: Lenv<&str, i32> = Lenv::new();
-//         //env.put("final".to_string(), 5);
-//         assert_eq!(Some(11), rec_local_def(&mut env, 5));
+//     fn env_recursive_call() {
+//         let env = Lenv::new();
+//         env.define("val".to_owned(), 10).unwrap();
+//         let res = recursive_call(&env);
+//         assert_eq!(0, res);
 //     }
-//
 // }

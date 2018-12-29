@@ -154,12 +154,12 @@ named!(
 named!(
     string<&str>,
     delimited!(
-        char!('\"'),
-        map_res!(
+        terminated!(tag!("\""), opt!(multispace)),
+        ws!(map_res!(
             escaped!(call!(alphanumeric), '\\', one_of!("\"n\\")),
             str::from_utf8
-        ),
-        char!('\"')
+        )),
+        preceded!(opt!(multispace), tag!("\""))
     )
 );
 
