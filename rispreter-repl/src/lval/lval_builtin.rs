@@ -8,27 +8,30 @@ pub struct Lbuiltin(pub fn(lenv: &Rc<Lenv>, lval: &mut Lval) -> Lval, String);
 
 impl Lbuiltin {
     pub fn add_builtins(lenv: &Rc<Lenv>) {
+        lenv.add_builtin("\\", Lbuiltin::lbuiltin_lambda());
+        lenv.add_builtin("def", Lbuiltin::lbuiltin_def());
+        lenv.add_builtin("=", Lbuiltin::lbuiltin_put());
+
+        lenv.add_builtin("list", Lbuiltin::lbuiltin_list());
+        lenv.add_builtin("head", Lbuiltin::lbuiltin_head());
+        lenv.add_builtin("tail", Lbuiltin::lbuiltin_tail());
+        lenv.add_builtin("eval", Lbuiltin::lbuiltin_eval());
+        lenv.add_builtin("join", Lbuiltin::lbuiltin_join());
+        lenv.add_builtin("cons", Lbuiltin::lbuiltin_cons());
+
         lenv.add_builtin("+", Lbuiltin::lbuiltin_add());
         lenv.add_builtin("-", Lbuiltin::lbuiltin_sub());
         lenv.add_builtin("*", Lbuiltin::lbuiltin_mul());
         lenv.add_builtin("/", Lbuiltin::lbuiltin_div());
         lenv.add_builtin("%", Lbuiltin::lbuiltin_mod());
-        lenv.add_builtin("head", Lbuiltin::lbuiltin_head());
-        lenv.add_builtin("tail", Lbuiltin::lbuiltin_tail());
-        lenv.add_builtin("list", Lbuiltin::lbuiltin_list());
-        lenv.add_builtin("join", Lbuiltin::lbuiltin_join());
-        lenv.add_builtin("cons", Lbuiltin::lbuiltin_cons());
-        lenv.add_builtin("eval", Lbuiltin::lbuiltin_eval());
-        lenv.add_builtin("def", Lbuiltin::lbuiltin_def());
-        lenv.add_builtin("=", Lbuiltin::lbuiltin_put());
-        lenv.add_builtin("\\", Lbuiltin::lbuiltin_lambda());
+
+        lenv.add_builtin("if", Lbuiltin::lbuiltin_if());
         lenv.add_builtin("eq", Lbuiltin::lbuiltin_eq());
         lenv.add_builtin("neq", Lbuiltin::lbuiltin_neq());
         lenv.add_builtin("gt", Lbuiltin::lbuiltin_gt());
         lenv.add_builtin("lt", Lbuiltin::lbuiltin_lt());
         lenv.add_builtin("gte", Lbuiltin::lbuiltin_gte());
         lenv.add_builtin("lte", Lbuiltin::lbuiltin_lte());
-        lenv.add_builtin("if", Lbuiltin::lbuiltin_if());
     }
 
     fn lbuiltin_add() -> Lbuiltin {
@@ -623,54 +626,10 @@ fn def(env: &Rc<Lenv>, lval: &mut Lval) -> Lval {
 /// assert_eq!(1f64, *res.cell[0]);
 /// ```
 fn put(env: &Rc<Lenv>, lval: &mut Lval) -> Lval {
-    var(env, lval, "=")
+    var(env, lval, "put")
 }
 
 fn var(env: &Rc<Lenv>, lval: &mut Lval, func: &str) -> Lval {
-
-    if let LvalType::LVAL_QEXPR = &lval.cell[0].ltype {
-    } else {
-        return Lval::lval_err(format!(
-            "not a Q-expression got {}, expect {}",
-            lval.ltype,
-            LvalType::LVAL_QEXPR
-        ));
-    }
-    let left_len = lval.cell[0].cell.len();
-    let mut right_len = 0;
-    for _ in 1..lval.cell.len() {
-        right_len += 1;
-    }
-    if left_len != right_len {
-        return Lval::lval_err(format!("'def' expects a equal number of bindings. Got left: {} right: {}, expects left: {} right: {}",
-                                    left_len, right_len, left_len, left_len));
-    }
-
-    for cell in lval.cell[0].cell.clone() {
-        match cell.ltype {
-            LvalType::LVAL_SYM(_sym) => {
-                continue;
-            }
-            _ => return Lval::lval_error_type(cell.ltype, LvalType::LVAL_SYM("symbol".to_string())),
-        }
-    }
-
-    let symbols_list = lval.lval_pop();
-
-    for i in 0..symbols_list.cell.len() {
-        if let LvalType::LVAL_SYM(str) = &symbols_list.cell[i].ltype {
-            match func {
-                "def" => {
-                    env.def(str.to_string(), *lval.cell[i].clone());
-                }
-                "put" => {
-                    env.put(str.to_string(), *lval.cell[i].clone());
-                }
-                _ => {}
-            }
-        }
-    }
-    Lval::lval_sexpr()
 
     // if let LvalType::LVAL_QEXPR = &lval.cell[0].ltype {
     // } else {
@@ -680,30 +639,74 @@ fn var(env: &Rc<Lenv>, lval: &mut Lval, func: &str) -> Lval {
     //         LvalType::LVAL_QEXPR
     //     ));
     // }
-    // let syms = &lval.cell[0];
-    // for i in 0..syms.cell.len() {
-    //     if let LvalType::LVAL_SYM(_s) = &syms.cell[i].ltype {
-    //     } else {
-    //         return Lval::lval_error_type(syms.cell[i].ltype.clone(), LvalType::LVAL_SYM("".to_owned()));
-    //     }
+    // let left_len = lval.cell[0].cell.len();
+    // let mut right_len = 0;
+    // for _ in 1..lval.cell.len() {
+    //     right_len += 1;
     // }
-    // if !(syms.cell.len() == lval.cell.len()-1) {
-    //     return Lval::lval_err(format!("to many arguments for symbols"));
+    // if left_len != right_len {
+    //     return Lval::lval_err(format!("'def' expects a equal number of bindings. Got left: {} right: {}, expects left: {} right: {}",
+    //                                 left_len, right_len, left_len, left_len));
     // }
     //
-    // for i in 0..syms.cell.len() {
-    //     if let LvalType::LVAL_SYM(str) = &syms.cell[i].ltype {
+    // for cell in lval.cell[0].cell.clone() {
+    //     match cell.ltype {
+    //         LvalType::LVAL_SYM(_sym) => {
+    //             continue;
+    //         }
+    //         _ => return Lval::lval_error_type(cell.ltype, LvalType::LVAL_SYM("symbol".to_string())),
+    //     }
+    // }
+    //
+    // let symbols_list = lval.lval_pop();
+    //
+    // for i in 0..symbols_list.cell.len() {
+    //     if let LvalType::LVAL_SYM(str) = &symbols_list.cell[i].ltype {
     //         match func {
     //             "def" => {
-    //                 env.def(str.to_string(), *lval.cell[i+1].clone()).unwrap();
+    //                 env.def(str.to_string(), *lval.cell[i].clone()).unwrap();
     //             }
     //             "put" => {
-    //                 env.put(str.to_string(), *lval.cell[i+1].clone()).unwrap();
+    //                 env.put(str.to_string(), *lval.cell[i].clone()).unwrap();
     //             }
     //             _ => {}
     //         }
     //     }
     // }
+
+    if let LvalType::LVAL_QEXPR = &lval.cell[0].ltype {
+    } else {
+        return Lval::lval_err(format!(
+            "not a Q-expression got {}, expect {}",
+            lval.ltype,
+            LvalType::LVAL_QEXPR
+        ));
+    }
+    let syms = &lval.cell[0];
+    for i in 0..syms.cell.len() {
+        if let LvalType::LVAL_SYM(_s) = &syms.cell[i].ltype {
+        } else {
+            return Lval::lval_error_type(syms.cell[i].ltype.clone(), LvalType::LVAL_SYM("".to_owned()));
+        }
+    }
+    if !(syms.cell.len() == lval.cell.len()-1) {
+        return Lval::lval_err(format!("to many arguments for symbols"));
+    }
+
+    for i in 0..syms.cell.len() {
+        if let LvalType::LVAL_SYM(str) = &syms.cell[i].ltype {
+            match func {
+                "def" => {
+                    env.def(str.to_string(), *lval.cell[i+1].clone()).unwrap();
+                }
+                "put" => {
+                    env.put(str.to_string(), *lval.cell[i+1].clone()).unwrap();
+                }
+                _ => {}
+            }
+        }
+    }
+    Lval::lval_sexpr()
 }
 
 fn lambda(_env: &Rc<Lenv>, lval: &mut Lval) -> Lval {

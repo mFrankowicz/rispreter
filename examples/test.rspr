@@ -32,3 +32,4 @@
 (fun {month-day-suffix i} { select {(eq i 0)  "st"} {(eq i 1) "nd"} {(eq i 3)  "rd"} {otherwise "th"} })
 (fun {case x & cs} { if (eq cs nil) {error "nocasefound"} {if (eq x (fst (fst cs))) {snd (fst cs)} { unpack case (join (list x) (tail cs))}} })
 (fun {fib n} { select { (eq n 0) 0 } { (eq n 1) 1 } { otherwise (+ (fib (- n 1)) (fib (- n 2))) } })
+(fun {rec n} { select { (eq n 0) 0 } { otherwise (rec (- n 1))}})

@@ -8,6 +8,7 @@ use crate::lval::lval_builtin::Lbuiltin;
 pub struct Lenv {
     parent: Option<Parent>,
     vals: RefCell<HashMap<String, Lval>>,
+    deepness: RefCell<usize>,
 }
 
 impl Lenv {
@@ -42,7 +43,6 @@ impl Lenv {
         }
 
         let e = Lenv::init(Some(Parent::Weak(Rc::downgrade(parent))));
-
         // debug_create!(
         //     "Lenv::Weak (parent has {} refs)",
         //     e.parent.as_ref().map_or(0, |p| p.refs()));
@@ -60,8 +60,6 @@ impl Lenv {
 
         // debug_define!("{} => {:?}", name, val);
         vals.insert(id.to_owned(), val);
-
-
         Ok(())
     }
 
@@ -75,14 +73,19 @@ impl Lenv {
 
     pub fn get(&self, id: String) -> Result<Lval,String> {
         //let name = &id.lexeme;
+        //println!("trying to get {}", id);
         let vals = self.vals.borrow();
         if let Some(val) = vals.get(&id) {
+            //println!("got {}", val);
             Ok(val.clone())
         } else {
+            //println!("{} not binded in this env: \n {:?} \n", id, self);
+            //println!("checking on parent");
             if let Some(ref parent) = self.parent {
+                //println!("this has parent");
                 parent.get(id)
             } else {
-                Err(format!("variable `{}` is undefined", id))
+                Ok(Lval::lval_err(format!("{} is unbounded", id)))
             }
         }
 
@@ -92,7 +95,7 @@ impl Lenv {
         //         return parent.get(id);
         //     }
         //
-        //     return Err(format!("variable `{}` is undefined", id));
+        //     return Ok(Lval::lval_err(format!("{} is unbounded", id)))
         // }
         //
         // Ok(vals.get(&id).cloned().unwrap())
@@ -143,6 +146,7 @@ impl Lenv {
         Rc::new(Lenv {
             parent,
             vals: RefCell::new(HashMap::new()),
+            deepness: RefCell::new(0)
         })
     }
 
@@ -226,15 +230,15 @@ impl Parent {
     fn get(&self, id: String) -> Result<Lval,String> { parent_call!(self.get, id) }
     fn get_global(&self, id: String) -> Result<Lval,String> { parent_call!(self.get_global, id) }
     fn def(&self, id: String, val: Lval) -> Result<(), String> {parent_call!(self.def, id, val)}
-    fn refs(&self) -> usize {
-        match *self {
-            Parent::Strong(ref e) => Rc::strong_count(e),
-            Parent::Weak(ref w) => match w.upgrade() {
-                Some(ref e) => Rc::strong_count(e) - 1,
-                None => 0,
-            }
-        }
-    }
+    // fn refs(&self) -> usize {
+    //     match *self {
+    //         Parent::Strong(ref e) => Rc::strong_count(e),
+    //         Parent::Weak(ref w) => match w.upgrade() {
+    //             Some(ref e) => Rc::strong_count(e) - 1,
+    //             None => 0,
+    //         }
+    //     }
+    // }
 
     fn has_weak(&self) -> bool {
         match *self {

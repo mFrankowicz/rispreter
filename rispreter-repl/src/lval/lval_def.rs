@@ -1,5 +1,4 @@
 use crate::lval::lval_builtin::*;
-//use std::collections::HashMap;
 use std::collections::VecDeque;
 use std::fmt;
 use std::rc::Rc;

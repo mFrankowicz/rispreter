@@ -54,6 +54,60 @@ There are some objectives/todos that I want to see in this project, they are (in
     - Lexical scoping and static typing are things to consider after we (i hope) have some solid base.
 
 ---
+### Examples
+
+`def` keyword to define globals
+```clojure
+rispr> (def {nil} {})
+()
+rispr> (nil)
+{}
+rispr> (def {fun} (\ {f b} {def (head f) (\ (tail f) b)}))
+```
+lambda
+```clojure
+rispr> (\ {x y} {+ x y})
+body: [+, x, y]
+formals: [x, y]
+rispr> ((\ {x y} {+ x y}) 5 4)
+9
+```
+
+functions are partially applied
+```clojure
+rispr> (\ {x y} {+ x y})
+body: [+, x, y]
+formals: [x, y]
+rispr> ((\ {x y} {+ x y}) 5)
+body: [+, x, y]
+formals: [y]
+rispr> (((\ {x y} {+ x y}) 5) 4)
+9
+```
+Let's play and build a prelude library
+```clojure
+rispr> (def {nil} {})
+()
+rispr> (nil)
+{}
+rispr> (def {fun} (\ {f b} {def (head f) (\ (tail f) b)}))
+()
+rispr> (fun {unpack f l} { eval (join (list f) l) })
+()
+rispr> (fun {pack f & xs} {f xs})
+()
+rispr> (unpack + {1 2 3})
+6
+rispr> (pack head 1 2 3)
+{1}
+;aka curry and uncurry
+rispr> (def {curry} unpack)
+()
+rispr> (def {uncurry} pack)
+()
+rispr> (fun {do & l}) {if (eq l nil) {nil} {last l}}
+```
+---
 
 I shall mention some links, projects and references that I follow while i work in this project:
 

@@ -1,12 +1,20 @@
 use crate::lval::lval_builtin;
 use crate::lval::lval_def::*;
 use crate::lval::lval_env::Lenv;
-use crate::lval::lval_builtin::list;
 use std::rc::Rc;
+
+static mut rec_count: usize = 0;
 
 pub fn lval_eval(lenv: &Rc<Lenv>, lval: &mut Lval) -> Lval {
     match &lval.ltype {
         LvalType::LVAL_SYM(sym) => {
+            if sym == "rec" {
+                unsafe{
+                    rec_count += 1;
+                    println!("the name of this function is : {} with: {}", sym, rec_count);
+                }
+            }
+
             let x = lenv.get(sym.to_string());
             x.unwrap()
         }
@@ -27,8 +35,6 @@ pub fn lval_eval_sexpr(lenv: &Rc<Lenv>, lval: &mut Lval) -> Lval {
     for i in 0..lval.cell.len() {
         if let LvalType::LVAL_ERR(_err) = &lval.cell[i].ltype {
             return lval.lval_take(i);
-        } else {
-            continue;
         }
 
         // match lval.cell[i].ltype  {
@@ -45,7 +51,7 @@ pub fn lval_eval_sexpr(lenv: &Rc<Lenv>, lval: &mut Lval) -> Lval {
         return lval.clone();
     }
     if lval.cell.len() == 1 {
-        return lval.lval_take(0);
+        return lval_eval(lenv, &mut lval.lval_take(0));
     }
 
     let mut f = lval.lval_pop();
@@ -61,10 +67,9 @@ pub fn lval_call(lenv: &Rc<Lenv>, f: &mut Lval, lval: &mut Lval) -> Lval {
             // record argument counts
             let given = lval.cell.len();
             let total = lambda.formals.cell.len();
-            lambda.local_lenv = Lenv::from_weak(&lenv);
             // println!("given {}", given);
             // println!("total {}", total);
-
+            lambda.local_lenv = Lenv::from_weak(&lenv);
             // while arguments still to be processed
             while lval.cell.len() > 0 {
                 // if we ran out of formal arguments to bind
@@ -116,9 +121,9 @@ pub fn lval_call(lenv: &Rc<Lenv>, f: &mut Lval, lval: &mut Lval) -> Lval {
 
             // if all formals have been bound evaluate
             if lambda.formals.cell.len() == 0 {
+
                 // apend the lambda local env to parent env
                 //lambda.local_lenv.set_parent(lenv);
-
                 // evaluetes in this new context
                 return lval_builtin::eval(
                     &mut lambda.local_lenv,
