@@ -1,20 +1,12 @@
 use crate::lval::lval_builtin;
 use crate::lval::lval_def::*;
 use crate::lval::lval_env::Lenv;
+use crate::lval::lval_error::{Lerror, LvalTypeMeta};
 use std::rc::Rc;
-
-static mut rec_count: usize = 0;
 
 pub fn lval_eval(lenv: &Rc<Lenv>, lval: &mut Lval) -> Lval {
     match &lval.ltype {
         LvalType::LVAL_SYM(sym) => {
-            if sym == "rec" {
-                unsafe{
-                    rec_count += 1;
-                    println!("the name of this function is : {} with: {}", sym, rec_count);
-                }
-            }
-
             let x = lenv.get(sym.to_string());
             x.unwrap()
         }
@@ -36,15 +28,6 @@ pub fn lval_eval_sexpr(lenv: &Rc<Lenv>, lval: &mut Lval) -> Lval {
         if let LvalType::LVAL_ERR(_err) = &lval.cell[i].ltype {
             return lval.lval_take(i);
         }
-
-        // match lval.cell[i].ltype  {
-        //     LvalType::LVAL_ERR(_err) => {
-        //         return lval.lval_take(i)
-        //     },
-        //     _ => {
-        //         continue;
-        //     }
-        // }
     }
 
     if lval.cell.len() == 0 {
@@ -74,10 +57,7 @@ pub fn lval_call(lenv: &Rc<Lenv>, f: &mut Lval, lval: &mut Lval) -> Lval {
             while lval.cell.len() > 0 {
                 // if we ran out of formal arguments to bind
                 if lambda.formals.cell.len() == 0 {
-                    return Lval::lval_err(format!(
-                        "Function passed to many argyments. Got {}, expect {}, called from lval_call",
-                        given, total
-                    ));
+                    return Lval::lval_err(Lerror::LambdaWrongNumberOfArgs {llambda: Box::new(lambda), expect: total, got: given})
                 }
 
                 // pop the first symbol from the formals
@@ -109,9 +89,7 @@ pub fn lval_call(lenv: &Rc<Lenv>, f: &mut Lval, lval: &mut Lval) -> Lval {
                 && lambda.formals.cell[0].ltype == LvalType::LVAL_SYM("&".to_string())
             {
                 if lambda.formals.cell.len() != 2 {
-                    return Lval::lval_err(format!(
-                        "Function format invalid. Symbol '&' not followed by single symbol"
-                    ));
+                    return Lval::lval_err(Lerror::LambdaWrongGenericError { llambda: Box::new(lambda), msg: "Format invalid. Symbol '&' not followed by single symbol".to_owned()})
                 }
                 lambda.formals.lval_pop();
                 let sym = lambda.formals.lval_pop();
@@ -127,14 +105,14 @@ pub fn lval_call(lenv: &Rc<Lenv>, f: &mut Lval, lval: &mut Lval) -> Lval {
                 // evaluetes in this new context
                 return lval_builtin::eval(
                     &mut lambda.local_lenv,
-                    Lval::lval_sexpr().add_cell(*lambda.body.clone()),
+                    Lval::lval_sexpr().add_cell(*lambda.body),
                 );
             } else {
                 // returns a partially bound evalueted lambda
                 return Lval::lval_lambda_copy(lambda.local_lenv, *lambda.formals, *lambda.body);
             }
         }
-        _ => Lval::lval_err(format!("Not a builtin function or a lambda")),
+        e => Lval::lval_err(Lerror::GenericError {msg: format!("{:?} is not a builtin function or a lambda", e)}),
     }
 }
 

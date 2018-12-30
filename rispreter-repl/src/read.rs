@@ -1,4 +1,6 @@
 use crate::lval::lval_def::*;
+use crate::lval::lval_error::Lerror;
+
 use rispreter_parser::{NumType, Risp, SymbolKind};
 
 pub fn read(parsed: Option<Risp>) -> Lval {
@@ -24,12 +26,12 @@ pub fn read(parsed: Option<Risp>) -> Lval {
             },
             Risp::LSymbol(skind) => match skind {
                 SymbolKind::User(sym) => Lval::lval_sym(sym),
-                _ => Lval::lval_err("prelude not implemented yet".to_string()),
+                _ => Lval::lval_err(Lerror::GenericError { msg: "prelude not implemented yet".to_string()}),
             },
             Risp::LString(str) => Lval::lval_string(str),
             Risp::LBool(b) => Lval::lval_bool(b),
-            _ => Lval::lval_err("incomplete".to_string()),
+            _ => Lval::lval_err(Lerror::GenericError {msg: "incomplete".to_string()}),
         },
-        None => Lval::lval_err("Parser error".to_string()),
+        None => Lval::lval_err(Lerror::GenericError {msg: "Parser error".to_string()}),
     }
 }

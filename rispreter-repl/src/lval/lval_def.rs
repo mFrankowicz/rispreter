@@ -4,11 +4,11 @@ use std::fmt;
 use std::rc::Rc;
 use crate::lval::lval_env::Lenv;
 use crate::lval::lval_lambda::LLambda;
-
+use crate::lval::lval_error::Lerror;
 #[allow(non_camel_case_types)] // please
 #[derive(PartialEq, Clone)]
 pub enum LvalType {
-    LVAL_ERR(String),
+    LVAL_ERR(Lerror),
     LVAL_NUM(f64),
     LVAL_SYM(String),
     LVAL_FUN(Lbuiltin),
@@ -104,7 +104,7 @@ impl Lval {
         }
     }
 
-    pub fn lval_err(err: String) -> Lval {
+    pub fn lval_err(err: Lerror) -> Lval {
         Lval {
             ltype: LvalType::LVAL_ERR(err),
             cell: VecDeque::new(),
@@ -194,18 +194,6 @@ impl Lval {
     pub fn lval_join(&mut self, other: &mut Lval) {
         self.cell.append(&mut other.cell);
     }
-
-    // common errors methods
-    // TODO: needs better error management
-    pub fn lval_error_type(a: LvalType, b: LvalType) -> Lval {
-        Lval::lval_err(format!("Wrong type, got {} expect {}", a, b))
-    }
-    pub fn lval_error_argssize(a: usize, b: usize) -> Lval {
-        Lval::lval_err(format!("Wrong num of args, got {} expect {}", a, b))
-    }
-    pub fn lval_error_empty_qexpr(caller: String, a: Lval) -> Lval {
-        Lval::lval_err(format!("Q-expression is empty!: caller: {}, \n val: {:?}", caller, a))
-    }
 }
 
 impl fmt::Display for Lval {
@@ -277,7 +265,7 @@ impl From<Lval> for Option<String> {
         match v.ltype {
             LvalType::LVAL_STRING(str) => Some(str),
             LvalType::LVAL_SYM(sym) => Some(sym),
-            LvalType::LVAL_ERR(err) => Some(err),
+            LvalType::LVAL_ERR(err) => Some(err.to_string()),
             _ => None
         }
     }
@@ -320,8 +308,8 @@ pub mod tests {
 
     #[test]
     fn create_lval_type() {
-        let lval = Lval::lval_err("err".to_string());
-        assert_eq!(lval.ltype, LvalType::LVAL_ERR("err".to_string()));
+        // let lval = Lval::lval_err("err".to_string());
+        // assert_eq!(lval.ltype, LvalType::LVAL_ERR("err".to_string()));
 
         let lval = Lval::lval_num(1.0);
         assert_eq!(lval.ltype, LvalType::LVAL_NUM(1.0));

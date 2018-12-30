@@ -3,6 +3,7 @@ use std::rc::{Weak, Rc};
 use std::cell::RefCell;
 use crate::lval::lval_def::Lval;
 use crate::lval::lval_builtin::Lbuiltin;
+use crate::lval::lval_error::Lerror;
 
 #[derive(Default, Debug)]
 pub struct Lenv {
@@ -85,7 +86,7 @@ impl Lenv {
                 //println!("this has parent");
                 parent.get(id)
             } else {
-                Ok(Lval::lval_err(format!("{} is unbounded", id)))
+                Ok(Lval::lval_err(Lerror::SymbolNotBinded {sym: id}))
             }
         }
 
