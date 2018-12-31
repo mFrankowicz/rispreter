@@ -1,26 +1,20 @@
-use std::collections::HashMap;
-use std::rc::{Weak, Rc};
-use std::cell::RefCell;
-use crate::lval::lval_def::Lval;
 use crate::lval::lval_builtin::Lbuiltin;
+use crate::lval::lval_def::Lval;
 use crate::lval::lval_error::Lerror;
+use fnv::FnvHashMap;
+use std::cell::RefCell;
+use std::rc::{Rc, Weak};
 
 #[derive(Default, Debug)]
 pub struct Lenv {
     parent: Option<Parent>,
-    vals: RefCell<HashMap<String, Lval>>,
+    vals: RefCell<FnvHashMap<String, Lval>>,
     deepness: RefCell<usize>,
 }
 
 impl Lenv {
-
     pub fn new() -> Rc<Lenv> {
-        let e = Lenv::init(None);
-        // Callable::define_globals(e.as_ref());
-        //
-        // debug_create!("Lenv::Root");
-
-        e
+        Lenv::init(None)
     }
 
     pub fn add_builtin(&self, key: &str, b: Lbuiltin) {
@@ -29,51 +23,31 @@ impl Lenv {
     }
 
     pub fn from(parent: &Rc<Lenv>) -> Rc<Lenv> {
-        let e = Lenv::init(Some(Parent::Strong(Rc::clone(parent))));
-
-        // debug_create!(
-        //     "Lenv::Strong (parent has {} refs now)",
-        //     e.parent.as_ref().map_or(0, |p| p.refs()));
-        e
+        Lenv::init(Some(Parent::Strong(Rc::clone(parent))))
     }
 
     pub fn from_weak(parent: &Rc<Lenv>) -> Rc<Lenv> {
         if parent.has_weak() {
-            // debug_create!("Lenv chain already has weak reference");
-            return Lenv::from(parent)
+            return Lenv::from(parent);
         }
-
-        let e = Lenv::init(Some(Parent::Weak(Rc::downgrade(parent))));
-        // debug_create!(
-        //     "Lenv::Weak (parent has {} refs)",
-        //     e.parent.as_ref().map_or(0, |p| p.refs()));
-
-        e
+        Lenv::init(Some(Parent::Weak(Rc::downgrade(parent))))
     }
 
-    pub fn put(&self, id: String, val: Lval) -> Result<(),String> {
-        // let name = &id.lexeme;
+    pub fn put(&self, id: String, val: Lval) -> Result<(), String> {
         let mut vals = self.vals.borrow_mut();
-
-        // if vals.contains_key(&id) {
-        //     return Err(format!("variable `{}` already defined", id));
-        // }
-
-        // debug_define!("{} => {:?}", name, val);
-        vals.insert(id.to_owned(), val);
+        vals.insert(id, val);
         Ok(())
     }
 
     pub fn def(&self, id: String, val: Lval) -> Result<(), String> {
         if let Some(ref parent) = self.parent {
-            return parent.def(id, val)
+            return parent.def(id, val);
         } else {
             self.put(id, val)
         }
     }
 
-    pub fn get(&self, id: String) -> Result<Lval,String> {
-        //let name = &id.lexeme;
+    pub fn get(&self, id: String) -> Result<Lval, String> {
         //println!("trying to get {}", id);
         let vals = self.vals.borrow();
         if let Some(val) = vals.get(&id) {
@@ -86,20 +60,9 @@ impl Lenv {
                 //println!("this has parent");
                 parent.get(id)
             } else {
-                Ok(Lval::lval_err(Lerror::SymbolNotBinded {sym: id}))
+                Ok(Lval::lval_err(Lerror::SymbolNotBinded { sym: id }))
             }
         }
-
-        // if !vals.contains_key(&id) {
-        //     if let Some(ref parent) = self.parent {
-        //         //println!("got parent at key called {}", id);
-        //         return parent.get(id);
-        //     }
-        //
-        //     return Ok(Lval::lval_err(format!("{} is unbounded", id)))
-        // }
-        //
-        // Ok(vals.get(&id).cloned().unwrap())
     }
 
     pub fn assign_at(&self, id: String, val: Lval, dist: Option<&usize>) -> Result<Lval, String> {
@@ -116,7 +79,7 @@ impl Lenv {
         Err(format!("ancestor is undefined at depth {}", d))
     }
 
-    pub fn get_at(&self, id: String, dist: Option<&usize>) -> Result<Lval,String> {
+    pub fn get_at(&self, id: String, dist: Option<&usize>) -> Result<Lval, String> {
         if dist.is_none() {
             return self.get_global(id);
         }
@@ -146,8 +109,8 @@ impl Lenv {
     fn init(parent: Option<Parent>) -> Rc<Lenv> {
         Rc::new(Lenv {
             parent,
-            vals: RefCell::new(HashMap::new()),
-            deepness: RefCell::new(0)
+            vals: RefCell::new(FnvHashMap::default()),
+            deepness: RefCell::new(0),
         })
     }
 
@@ -161,7 +124,7 @@ impl Lenv {
         env
     }
 
-    fn assign(&self, id: String, val: Lval) -> Result<Lval,String> {
+    fn assign(&self, id: String, val: Lval) -> Result<Lval, String> {
         //let name = &id.lexeme;
         let mut vals = self.vals.borrow_mut();
 
@@ -177,7 +140,7 @@ impl Lenv {
         Ok(val)
     }
 
-    fn get_global(&self, id: String) -> Result<Lval,String> {
+    fn get_global(&self, id: String) -> Result<Lval, String> {
         match self.parent {
             None => self.get(id),
             Some(ref parent) => parent.get_global(id),
@@ -224,13 +187,22 @@ macro_rules! parent_call {
     };
 }
 
-
 impl Parent {
-    fn parent(&self) -> Option<Parent> { parent_call!(self.parent.clone) }
-    fn assign(&self, id: String, val: Lval) -> Result<Lval,String> { parent_call!(self.assign, id, val) }
-    fn get(&self, id: String) -> Result<Lval,String> { parent_call!(self.get, id) }
-    fn get_global(&self, id: String) -> Result<Lval,String> { parent_call!(self.get_global, id) }
-    fn def(&self, id: String, val: Lval) -> Result<(), String> {parent_call!(self.def, id, val)}
+    fn parent(&self) -> Option<Parent> {
+        parent_call!(self.parent.clone)
+    }
+    fn assign(&self, id: String, val: Lval) -> Result<Lval, String> {
+        parent_call!(self.assign, id, val)
+    }
+    fn get(&self, id: String) -> Result<Lval, String> {
+        parent_call!(self.get, id)
+    }
+    fn get_global(&self, id: String) -> Result<Lval, String> {
+        parent_call!(self.get_global, id)
+    }
+    fn def(&self, id: String, val: Lval) -> Result<(), String> {
+        parent_call!(self.def, id, val)
+    }
     // fn refs(&self) -> usize {
     //     match *self {
     //         Parent::Strong(ref e) => Rc::strong_count(e),

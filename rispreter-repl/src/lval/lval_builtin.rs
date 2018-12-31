@@ -1,7 +1,7 @@
 use crate::lval::lval_def::*;
 use crate::lval::lval_env::Lenv;
+use crate::lval::lval_error::{Lerror, LvalTypeMeta};
 use crate::lval::lval_eval;
-use crate::lval::lval_error::{LvalTypeMeta, Lerror};
 use std::rc::Rc;
 //use crate::lval::lval_lambda::LLambda;
 
@@ -128,7 +128,7 @@ impl PartialEq for Lbuiltin {
 
 impl Clone for Lbuiltin {
     fn clone(&self) -> Self {
-        Lbuiltin(self.0.clone(), self.1.clone())
+        Lbuiltin(self.0, self.1.clone())
     }
 }
 
@@ -260,10 +260,18 @@ fn op(_lenv: &Rc<Lenv>, lval: &mut Lval, op: char) -> Lval {
                     _ => {}
                 }
             } else {
-                return Lval::lval_err(Lerror::WrongType {lval: i.clone(), expect: LvalTypeMeta::LvalNum, got: Box::new(y.ltype)});
+                return Lval::lval_err(Lerror::WrongType {
+                    lval: i.clone(),
+                    expect: LvalTypeMeta::LvalNum,
+                    got: Box::new(y.ltype),
+                });
             }
         } else {
-            return Lval::lval_err(Lerror::WrongType {lval: i.clone(), expect: LvalTypeMeta::LvalNum, got: Box::new(x.ltype)});
+            return Lval::lval_err(Lerror::WrongType {
+                lval: i.clone(),
+                expect: LvalTypeMeta::LvalNum,
+                got: Box::new(x.ltype),
+            });
         }
     }
     x
@@ -344,7 +352,7 @@ fn ord_op(_lenv: &Rc<Lenv>, x: Lval, y: Lval, op: &str) -> Lval {
                     Lval::lval_bool(false)
                 }
             }
-            _ => Lval::lval_err(Lerror::InvalidOperand {op: op.to_owned()}),
+            _ => Lval::lval_err(Lerror::InvalidOperand { op: op.to_owned() }),
         },
         (LvalType::LVAL_STRING(a), LvalType::LVAL_STRING(b)) => match op {
             "gt" => {
@@ -375,7 +383,7 @@ fn ord_op(_lenv: &Rc<Lenv>, x: Lval, y: Lval, op: &str) -> Lval {
                     Lval::lval_bool(false)
                 }
             }
-            _ => Lval::lval_err(Lerror::InvalidOperand {op: op.to_owned()}),
+            _ => Lval::lval_err(Lerror::InvalidOperand { op: op.to_owned() }),
         },
         (LvalType::LVAL_QEXPR, LvalType::LVAL_QEXPR) => match op {
             "gt" => {
@@ -406,9 +414,12 @@ fn ord_op(_lenv: &Rc<Lenv>, x: Lval, y: Lval, op: &str) -> Lval {
                     Lval::lval_bool(false)
                 }
             }
-            _ => Lval::lval_err(Lerror::InvalidOperand {op: op.to_owned()}),
+            _ => Lval::lval_err(Lerror::InvalidOperand { op: op.to_owned() }),
         },
-        (a,b) => Lval::lval_err(Lerror::CantCompare {left: Box::new(a), right: Box::new(b)}),
+        (a, b) => Lval::lval_err(Lerror::CantCompare {
+            left: Box::new(a),
+            right: Box::new(b),
+        }),
     }
 }
 
@@ -422,13 +433,16 @@ fn lif(lenv: &Rc<Lenv>, lval: &mut Lval) -> Lval {
             false => lval_eval::lval_eval(lenv, &mut lval.lval_pop_with_index(2)),
         },
         LvalType::LVAL_NUM(n) => {
-            if n.clone() == 0.0 {
+            if *n == 0.0 {
                 lval_eval::lval_eval(lenv, &mut lval.lval_pop_with_index(1))
             } else {
                 lval_eval::lval_eval(lenv, &mut lval.lval_pop_with_index(2))
             }
         }
-        t => Lval::lval_err(Lerror::FirstArgumentDoesNotEvalTo { expect: LvalTypeMeta::LvalBool, got: Box::new(t.clone()) }),
+        t => Lval::lval_err(Lerror::FirstArgumentDoesNotEvalTo {
+            expect: LvalTypeMeta::LvalBool,
+            got: Box::new(t.clone()),
+        }),
     }
 }
 
@@ -447,16 +461,26 @@ fn lif(lenv: &Rc<Lenv>, lval: &mut Lval) -> Lval {
 /// ```
 fn head(_lenv: &Rc<Lenv>, lval: &mut Lval) -> Lval {
     if lval.cell.len() > 1 {
-        return Lval::lval_err(Lerror::WrongNumberOfArgs {lval: Box::new(lval.clone()), expect: 1, got: lval.cell.len()})
+        return Lval::lval_err(Lerror::WrongNumberOfArgs {
+            lval: Box::new(lval.clone()),
+            expect: 1,
+            got: lval.cell.len(),
+        });
     }
 
     let mut qexpr = lval.lval_pop();
     if qexpr.ltype != LvalType::LVAL_QEXPR {
-        return Lval::lval_err(Lerror::WrongType {lval: Box::new(qexpr.clone()), expect: LvalTypeMeta::LvalQexpr , got: Box::new(qexpr.ltype)})
+        return Lval::lval_err(Lerror::WrongType {
+            lval: Box::new(qexpr.clone()),
+            expect: LvalTypeMeta::LvalQexpr,
+            got: Box::new(qexpr.ltype),
+        });
     }
 
-    if qexpr.cell.len() == 0 {
-        return Lval::lval_err(Lerror::EmptyList {lval: Box::new(qexpr)})
+    if qexpr.cell.is_empty() {
+        return Lval::lval_err(Lerror::EmptyList {
+            lval: Box::new(qexpr),
+        });
     }
 
     let mut head = Lval::lval_qexpr();
@@ -479,20 +503,29 @@ fn head(_lenv: &Rc<Lenv>, lval: &mut Lval) -> Lval {
 /// ```
 fn tail(_env: &Rc<Lenv>, lval: &mut Lval) -> Lval {
     if lval.cell.len() > 1 {
-        return Lval::lval_err(Lerror::WrongNumberOfArgs {lval: Box::new(lval.clone()), expect: 1, got: lval.cell.len()})
+        return Lval::lval_err(Lerror::WrongNumberOfArgs {
+            lval: Box::new(lval.clone()),
+            expect: 1,
+            got: lval.cell.len(),
+        });
     }
 
     let mut qexpr = lval.lval_pop();
     if qexpr.ltype != LvalType::LVAL_QEXPR {
-        return Lval::lval_err(Lerror::WrongType {lval: Box::new(qexpr.clone()), expect: LvalTypeMeta::LvalQexpr , got: Box::new(qexpr.ltype)})
+        return Lval::lval_err(Lerror::WrongType {
+            lval: Box::new(qexpr.clone()),
+            expect: LvalTypeMeta::LvalQexpr,
+            got: Box::new(qexpr.ltype),
+        });
     }
 
-    if qexpr.cell.len() == 0 {
-        return Lval::lval_err(Lerror::EmptyList {lval: Box::new(qexpr)})
+    if qexpr.cell.is_empty() {
+        return Lval::lval_err(Lerror::EmptyList {
+            lval: Box::new(qexpr),
+        });
     }
 
-    let tail = qexpr.lval_split(1);
-    tail
+    qexpr.lval_split(1)
 }
 
 /// Transform all following arguments in a Q-expression
@@ -528,22 +561,34 @@ pub fn list(_env: &Rc<Lenv>, lval: &mut Lval) -> Lval {
 /// ```
 fn join(_env: &Rc<Lenv>, lval: &mut Lval) -> Lval {
     if lval.cell.len() != 2 {
-        return Lval::lval_err(Lerror::WrongNumberOfArgs {lval: Box::new(lval.clone()), expect: 2, got: lval.cell.len()})
+        return Lval::lval_err(Lerror::WrongNumberOfArgs {
+            lval: Box::new(lval.clone()),
+            expect: 2,
+            got: lval.cell.len(),
+        });
     }
     if lval.cell[0].ltype != LvalType::LVAL_QEXPR {
-        return Lval::lval_err(Lerror::WrongType {lval: lval.cell[0].clone(), expect: LvalTypeMeta::LvalQexpr , got: Box::new(lval.cell[0].ltype.clone())})
+        return Lval::lval_err(Lerror::WrongType {
+            lval: lval.cell[0].clone(),
+            expect: LvalTypeMeta::LvalQexpr,
+            got: Box::new(lval.cell[0].ltype.clone()),
+        });
     }
     if lval.cell[1].ltype != LvalType::LVAL_QEXPR {
-        return Lval::lval_err(Lerror::WrongType {lval: lval.cell[1].clone(), expect: LvalTypeMeta::LvalQexpr , got: Box::new(lval.cell[1].ltype.clone())})
+        return Lval::lval_err(Lerror::WrongType {
+            lval: lval.cell[1].clone(),
+            expect: LvalTypeMeta::LvalQexpr,
+            got: Box::new(lval.cell[1].ltype.clone()),
+        });
     }
 
     let mut y = lval.lval_pop();
-    if y.cell.len() == 0 {
-        return Lval::lval_err(Lerror::EmptyList {lval: Box::new(y)})
+    if y.cell.is_empty() {
+        return Lval::lval_err(Lerror::EmptyList { lval: Box::new(y) });
     }
     let mut x = lval.lval_pop();
-    if x.cell.len() == 0 {
-        return Lval::lval_err(Lerror::EmptyList {lval: Box::new(x)})
+    if x.cell.is_empty() {
+        return Lval::lval_err(Lerror::EmptyList { lval: Box::new(x) });
     }
 
     y.cell.append(&mut x.cell);
@@ -565,10 +610,18 @@ fn join(_env: &Rc<Lenv>, lval: &mut Lval) -> Lval {
 /// ```
 fn cons(_env: &Rc<Lenv>, lval: &mut Lval) -> Lval {
     if lval.cell.len() != 2 {
-        return Lval::lval_err(Lerror::WrongNumberOfArgs {lval: Box::new(lval.clone()), expect: 2, got: lval.cell.len()})
+        return Lval::lval_err(Lerror::WrongNumberOfArgs {
+            lval: Box::new(lval.clone()),
+            expect: 2,
+            got: lval.cell.len(),
+        });
     }
     if lval.cell[1].ltype != LvalType::LVAL_QEXPR {
-        return Lval::lval_err(Lerror::WrongType {lval: lval.cell[1].clone(), expect: LvalTypeMeta::LvalQexpr , got: Box::new(lval.cell[1].ltype.clone())})
+        return Lval::lval_err(Lerror::WrongType {
+            lval: lval.cell[1].clone(),
+            expect: LvalTypeMeta::LvalQexpr,
+            got: Box::new(lval.cell[1].ltype.clone()),
+        });
     }
     let x = lval.lval_pop();
     let mut qexpr = lval.lval_pop();
@@ -590,11 +643,15 @@ fn cons(_env: &Rc<Lenv>, lval: &mut Lval) -> Lval {
 /// assert_eq!(6f64, res);
 /// ```
 pub fn eval(env: &Rc<Lenv>, lval: &mut Lval) -> Lval {
-    // if lval.cell.len() == 0 || lval.cell.len() > 1 {
+    // if lval.cell.is_empty() || lval.cell.len() > 1 {
     //     return Lval::lval_error_argssize(lval.cell.len(), 1)
     // }
     if lval.cell[0].ltype != LvalType::LVAL_QEXPR {
-        return Lval::lval_err(Lerror::WrongType {lval: lval.cell[0].clone(), expect: LvalTypeMeta::LvalQexpr , got: Box::new(lval.cell[0].ltype.clone())})
+        return Lval::lval_err(Lerror::WrongType {
+            lval: lval.cell[0].clone(),
+            expect: LvalTypeMeta::LvalQexpr,
+            got: Box::new(lval.cell[0].ltype.clone()),
+        });
     }
 
     let mut x = lval.lval_take(0);
@@ -625,7 +682,6 @@ fn put(env: &Rc<Lenv>, lval: &mut Lval) -> Lval {
 }
 
 fn var(env: &Rc<Lenv>, lval: &mut Lval, func: &str) -> Lval {
-
     // if let LvalType::LVAL_QEXPR = &lval.cell[0].ltype {
     // } else {
     //     return Lval::lval_err(format!(
@@ -671,27 +727,42 @@ fn var(env: &Rc<Lenv>, lval: &mut Lval, func: &str) -> Lval {
 
     if let LvalType::LVAL_QEXPR = &lval.cell[0].ltype {
     } else {
-        return Lval::lval_err(Lerror::WrongType {lval: Box::new(lval.clone()), expect: LvalTypeMeta::LvalQexpr , got: Box::new(lval.ltype.clone())})
+        return Lval::lval_err(Lerror::WrongType {
+            lval: Box::new(lval.clone()),
+            expect: LvalTypeMeta::LvalQexpr,
+            got: Box::new(lval.ltype.clone()),
+        });
     }
     let syms = &lval.cell[0];
     for i in 0..syms.cell.len() {
         if let LvalType::LVAL_SYM(_s) = &syms.cell[i].ltype {
         } else {
-            return Lval::lval_err(Lerror::WrongType {lval: lval.cell[i].clone(), expect: LvalTypeMeta::LvalSym , got: Box::new(lval.cell[i].ltype.clone())})
+            return Lval::lval_err(Lerror::WrongType {
+                lval: lval.cell[i].clone(),
+                expect: LvalTypeMeta::LvalSym,
+                got: Box::new(lval.cell[i].ltype.clone()),
+            });
         }
     }
-    if !(syms.cell.len() == lval.cell.len()-1) {
-        return Lval::lval_err(Lerror::IncompatibleNumberOfArgs{ lval_left: syms.clone(), expect_left: syms.cell.len(), expect_right: syms.cell.len(), lval_right: Box::new(lval.clone()), got_left: syms.cell.len(), got_right: lval.cell.len()-1});
+    if syms.cell.len() != lval.cell.len() - 1 {
+        return Lval::lval_err(Lerror::IncompatibleNumberOfArgs {
+            lval_left: syms.clone(),
+            expect_left: syms.cell.len(),
+            expect_right: syms.cell.len(),
+            lval_right: Box::new(lval.clone()),
+            got_left: syms.cell.len(),
+            got_right: lval.cell.len() - 1,
+        });
     }
 
     for i in 0..syms.cell.len() {
         if let LvalType::LVAL_SYM(str) = &syms.cell[i].ltype {
             match func {
                 "def" => {
-                    env.def(str.to_string(), *lval.cell[i+1].clone()).unwrap();
+                    env.def(str.to_string(), *lval.cell[i + 1].clone()).unwrap();
                 }
                 "put" => {
-                    env.put(str.to_string(), *lval.cell[i+1].clone()).unwrap();
+                    env.put(str.to_string(), *lval.cell[i + 1].clone()).unwrap();
                 }
                 _ => {}
             }

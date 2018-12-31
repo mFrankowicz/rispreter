@@ -139,7 +139,7 @@ named!(
 // TODO: implement prelude enums
 named!(
     symbol<SymbolKind>,
-    alt!(map!(user_symbol, |u| SymbolKind::User(u)) | map!(user_symbol, |p| SymbolKind::User(p)))
+    alt!(map!(user_symbol, SymbolKind::User) | map!(user_symbol, SymbolKind::User))
 );
 
 named!(

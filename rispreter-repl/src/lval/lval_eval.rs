@@ -1,21 +1,14 @@
 use crate::lval::lval_builtin;
 use crate::lval::lval_def::*;
 use crate::lval::lval_env::Lenv;
-use crate::lval::lval_error::{Lerror, LvalTypeMeta};
+use crate::lval::lval_error::Lerror;
 use std::rc::Rc;
 
 pub fn lval_eval(lenv: &Rc<Lenv>, lval: &mut Lval) -> Lval {
     match &lval.ltype {
-        LvalType::LVAL_SYM(sym) => {
-            let x = lenv.get(sym.to_string());
-            x.unwrap()
-        }
-        LvalType::LVAL_SEXPR => {
-            return lval_eval_sexpr(lenv, lval);
-        }
-        _ => {
-            return lval.clone();
-        }
+        LvalType::LVAL_SYM(sym) => lenv.get(sym.to_string()).unwrap(),
+        LvalType::LVAL_SEXPR => lval_eval_sexpr(lenv, lval),
+        _ => lval.clone(),
     }
 }
 
@@ -30,7 +23,7 @@ pub fn lval_eval_sexpr(lenv: &Rc<Lenv>, lval: &mut Lval) -> Lval {
         }
     }
 
-    if lval.cell.len() == 0 {
+    if lval.cell.is_empty() {
         return lval.clone();
     }
     if lval.cell.len() == 1 {
@@ -54,10 +47,14 @@ pub fn lval_call(lenv: &Rc<Lenv>, f: &mut Lval, lval: &mut Lval) -> Lval {
             // println!("total {}", total);
             lambda.local_lenv = Lenv::from_weak(&lenv);
             // while arguments still to be processed
-            while lval.cell.len() > 0 {
+            while !lval.cell.is_empty() {
                 // if we ran out of formal arguments to bind
-                if lambda.formals.cell.len() == 0 {
-                    return Lval::lval_err(Lerror::LambdaWrongNumberOfArgs {llambda: Box::new(lambda), expect: total, got: given})
+                if lambda.formals.cell.is_empty() {
+                    return Lval::lval_err(Lerror::LambdaWrongNumberOfArgs {
+                        llambda: Box::new(lambda),
+                        expect: total,
+                        got: given,
+                    });
                 }
 
                 // pop the first symbol from the formals
@@ -69,7 +66,8 @@ pub fn lval_call(lenv: &Rc<Lenv>, f: &mut Lval, lval: &mut Lval) -> Lval {
                         let next_sym = lambda.formals.lval_pop();
                         lambda
                             .local_lenv
-                            .put(next_sym.to_string(), lval_builtin::list(lenv, lval)).unwrap();
+                            .put(next_sym.to_string(), lval_builtin::list(lenv, lval))
+                            .unwrap();
                         break;
                     }
                 }
@@ -85,11 +83,14 @@ pub fn lval_call(lenv: &Rc<Lenv>, f: &mut Lval, lval: &mut Lval) -> Lval {
                 lambda.local_lenv.put(sym.to_string(), val).unwrap();
             }
 
-            if lambda.formals.cell.len() > 0
+            if !lambda.formals.cell.is_empty()
                 && lambda.formals.cell[0].ltype == LvalType::LVAL_SYM("&".to_string())
             {
                 if lambda.formals.cell.len() != 2 {
-                    return Lval::lval_err(Lerror::LambdaWrongGenericError { llambda: Box::new(lambda), msg: "Format invalid. Symbol '&' not followed by single symbol".to_owned()})
+                    return Lval::lval_err(Lerror::LambdaWrongGenericError {
+                        llambda: Box::new(lambda),
+                        msg: "Format invalid. Symbol '&' not followed by single symbol".to_owned(),
+                    });
                 }
                 lambda.formals.lval_pop();
                 let sym = lambda.formals.lval_pop();
@@ -98,21 +99,23 @@ pub fn lval_call(lenv: &Rc<Lenv>, f: &mut Lval, lval: &mut Lval) -> Lval {
             }
 
             // if all formals have been bound evaluate
-            if lambda.formals.cell.len() == 0 {
-
+            if lambda.formals.cell.is_empty() {
                 // apend the lambda local env to parent env
                 //lambda.local_lenv.set_parent(lenv);
                 // evaluetes in this new context
-                return lval_builtin::eval(
-                    &mut lambda.local_lenv,
+
+                lval_builtin::eval(
+                    &lambda.local_lenv,
                     Lval::lval_sexpr().add_cell(*lambda.body),
-                );
+                )
             } else {
                 // returns a partially bound evalueted lambda
-                return Lval::lval_lambda_copy(lambda.local_lenv, *lambda.formals, *lambda.body);
+                Lval::lval_lambda_copy(lambda.local_lenv, *lambda.formals, *lambda.body)
             }
         }
-        e => Lval::lval_err(Lerror::GenericError {msg: format!("{:?} is not a builtin function or a lambda", e)}),
+        e => Lval::lval_err(Lerror::GenericError {
+            msg: format!("{:?} is not a builtin function or a lambda", e),
+        }),
     }
 }
 

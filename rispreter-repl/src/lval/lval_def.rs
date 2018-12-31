@@ -1,10 +1,10 @@
 use crate::lval::lval_builtin::*;
+use crate::lval::lval_env::Lenv;
+use crate::lval::lval_error::Lerror;
+use crate::lval::lval_lambda::LLambda;
 use std::collections::VecDeque;
 use std::fmt;
 use std::rc::Rc;
-use crate::lval::lval_env::Lenv;
-use crate::lval::lval_lambda::LLambda;
-use crate::lval::lval_error::Lerror;
 #[allow(non_camel_case_types)] // please
 #[derive(PartialEq, Clone)]
 pub enum LvalType {
@@ -22,34 +22,18 @@ pub enum LvalType {
 impl fmt::Display for LvalType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            LvalType::LVAL_ERR(err) => {
-                write!(f, "error: \"{}\"", err)
-            },
-            LvalType::LVAL_NUM(num) => {
-                write!(f, "{}", num)
-            },
-            LvalType::LVAL_SYM(sym) => {
-                write!(f, "{}", sym)
-            },
-            LvalType::LVAL_STRING(str) => {
-                write!(f, "\"{}\"", str)
-            }
-            LvalType::LVAL_FUN(fun) => {
-                write!(f, "{:?}", fun)
-            },
+            LvalType::LVAL_ERR(err) => write!(f, "error: \"{}\"", err),
+            LvalType::LVAL_NUM(num) => write!(f, "{}", num),
+            LvalType::LVAL_SYM(sym) => write!(f, "{}", sym),
+            LvalType::LVAL_STRING(str) => write!(f, "\"{}\"", str),
+            LvalType::LVAL_FUN(fun) => write!(f, "{:?}", fun),
             LvalType::LVAL_LAMBDA(lambda) => {
-                write!(f, "body: {:?}\n", lambda.body.cell)?;
-                write!(f, "formals: {:?}", lambda.formals.cell)
-            },
-            LvalType::LVAL_SEXPR => {
-                write!(f, "()")
-            },
-            LvalType::LVAL_QEXPR => {
-                write!(f, "{{}}")
-            },
-            LvalType::LVAL_BOOL(b) => {
-                write!(f, "{}", b)
+                writeln!(f, "body: {:?}", lambda.body.cell)?;
+                writeln!(f, "formals: {:?}", lambda.formals.cell)
             }
+            LvalType::LVAL_SEXPR => write!(f, "()"),
+            LvalType::LVAL_QEXPR => write!(f, "{{}}"),
+            LvalType::LVAL_BOOL(b) => write!(f, "{}", b),
         }
     }
 }
@@ -57,34 +41,18 @@ impl fmt::Display for LvalType {
 impl fmt::Debug for LvalType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            LvalType::LVAL_ERR(err) => {
-                write!(f, "error: \"{}\"", err)
-            },
-            LvalType::LVAL_NUM(num) => {
-                write!(f, "{}", num)
-            },
-            LvalType::LVAL_SYM(sym) => {
-                write!(f, "{}", sym)
-            },
-            LvalType::LVAL_STRING(str) => {
-                write!(f, "\"{}\"", str)
-            }
-            LvalType::LVAL_FUN(fun) => {
-                write!(f, "{:?}", fun)
-            },
+            LvalType::LVAL_ERR(err) => write!(f, "error: \"{}\"", err),
+            LvalType::LVAL_NUM(num) => write!(f, "{}", num),
+            LvalType::LVAL_SYM(sym) => write!(f, "{}", sym),
+            LvalType::LVAL_STRING(str) => write!(f, "\"{}\"", str),
+            LvalType::LVAL_FUN(fun) => write!(f, "{:?}", fun),
             LvalType::LVAL_LAMBDA(lambda) => {
-                write!(f, "body: {:?}\n", lambda.body.cell)?;
-                write!(f, "formals: {:?}", lambda.formals.cell)
-            },
-            LvalType::LVAL_SEXPR => {
-                write!(f, "()")
-            },
-            LvalType::LVAL_QEXPR => {
-                write!(f, "{{}}")
-            },
-            LvalType::LVAL_BOOL(b) => {
-                write!(f, "{}", b)
+                writeln!(f, "body: {:?}", lambda.body.cell)?;
+                writeln!(f, "formals: {:?}", lambda.formals.cell)
             }
+            LvalType::LVAL_SEXPR => write!(f, "()"),
+            LvalType::LVAL_QEXPR => write!(f, "{{}}"),
+            LvalType::LVAL_BOOL(b) => write!(f, "{}", b),
         }
     }
 }
@@ -96,7 +64,6 @@ pub struct Lval {
 }
 
 impl Lval {
-
     pub fn lval_num(num: f64) -> Lval {
         Lval {
             ltype: LvalType::LVAL_NUM(num),
@@ -200,30 +167,28 @@ impl fmt::Display for Lval {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self.ltype {
             LvalType::LVAL_SEXPR => {
-                if self.cell.len() == 0 {
+                if self.cell.is_empty() {
                     write!(f, "{}", self.ltype)
                 } else {
                     write!(f, "(")?;
                     for elem in self.cell.iter() {
                         write!(f, " {} ", elem)?;
-                    };
+                    }
                     write!(f, ")")
                 }
-            },
+            }
             LvalType::LVAL_QEXPR => {
-                if self.cell.len() == 0 {
+                if self.cell.is_empty() {
                     write!(f, "{}", self.ltype)
                 } else {
                     write!(f, "{{")?;
                     for elem in self.cell.iter() {
                         write!(f, " {} ", elem)?;
-                    };
+                    }
                     write!(f, "}}")
                 }
-            },
-            _ => {
-                write!(f, "{}", self.ltype)
             }
+            _ => write!(f, "{}", self.ltype),
         }
     }
 }
@@ -232,30 +197,28 @@ impl fmt::Debug for Lval {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self.ltype {
             LvalType::LVAL_SEXPR => {
-                if self.cell.len() == 0 {
+                if self.cell.is_empty() {
                     write!(f, "{}", self.ltype)
                 } else {
                     write!(f, "(")?;
                     for elem in self.cell.iter() {
                         write!(f, " {} ", elem)?;
-                    };
+                    }
                     write!(f, ")")
                 }
-            },
+            }
             LvalType::LVAL_QEXPR => {
-                if self.cell.len() == 0 {
+                if self.cell.is_empty() {
                     write!(f, "{}", self.ltype)
                 } else {
                     write!(f, "{{")?;
                     for elem in self.cell.iter() {
                         write!(f, " {} ", elem)?;
-                    };
+                    }
                     write!(f, "}}")
                 }
-            },
-            _ => {
-                write!(f, "{}", self.ltype)
             }
+            _ => write!(f, "{}", self.ltype),
         }
     }
 }
@@ -266,7 +229,7 @@ impl From<Lval> for Option<String> {
             LvalType::LVAL_STRING(str) => Some(str),
             LvalType::LVAL_SYM(sym) => Some(sym),
             LvalType::LVAL_ERR(err) => Some(err.to_string()),
-            _ => None
+            _ => None,
         }
     }
 }
@@ -275,7 +238,7 @@ impl From<Lval> for Option<f64> {
     fn from(v: Lval) -> Option<f64> {
         match v.ltype {
             LvalType::LVAL_NUM(num) => Some(num),
-            _ => None
+            _ => None,
         }
     }
 }
@@ -283,10 +246,8 @@ impl From<Lval> for Option<f64> {
 impl PartialEq<Lval> for f64 {
     fn eq(&self, other: &Lval) -> bool {
         match other.ltype {
-            LvalType::LVAL_NUM(ref num) => {
-                self == num
-            },
-            _ => false
+            LvalType::LVAL_NUM(ref num) => self == num,
+            _ => false,
         }
     }
 }
@@ -294,10 +255,8 @@ impl PartialEq<Lval> for f64 {
 impl PartialEq<Lval> for bool {
     fn eq(&self, other: &Lval) -> bool {
         match other.ltype {
-            LvalType::LVAL_BOOL(ref b) => {
-                self == b
-            },
-            _ => false
+            LvalType::LVAL_BOOL(ref b) => self == b,
+            _ => false,
         }
     }
 }

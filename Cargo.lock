@@ -353,6 +353,7 @@ name = "rispreter-repl"
 version = "0.0.6"
 dependencies = [
  "clap 2.32.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "fnv 1.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "linefeed 0.5.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "rispreter-parser 0.1.0",
 ]

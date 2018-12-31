@@ -5,17 +5,16 @@ use std::rc::Rc;
 pub struct LLambda {
     pub local_lenv: Rc<Lenv>,
     pub formals: Box<Lval>,
-    pub body: Box<Lval>
+    pub body: Box<Lval>,
 }
 
 impl LLambda {
-    pub fn new(formals: Lval, body: Lval) -> Self{
+    pub fn new(formals: Lval, body: Lval) -> Self {
         LLambda {
             local_lenv: Lenv::new(),
             formals: Box::new(formals),
             body: Box::new(body),
         }
-
     }
 
     pub fn llambda_copy(env: Rc<Lenv>, formals: Lval, body: Lval) -> Self {
@@ -29,11 +28,6 @@ impl LLambda {
 
 impl PartialEq for LLambda {
     fn eq(&self, other: &LLambda) -> bool {
-        if self.body == other.body &&
-        self.formals == other.formals {
-            true
-        } else {
-            false
-        }
+        self.body == other.body && self.formals == other.formals
     }
 }

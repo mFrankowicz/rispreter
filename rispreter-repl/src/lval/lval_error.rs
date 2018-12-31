@@ -3,18 +3,54 @@ use crate::lval::lval_lambda::LLambda;
 
 #[derive(PartialEq, Clone)]
 pub enum Lerror {
-    GenericError {msg: String},
-    EmptyList {lval: Box<Lval>},
+    GenericError {
+        msg: String,
+    },
+    EmptyList {
+        lval: Box<Lval>,
+    },
     DivisionByZero,
-    CantCompare {left: Box<LvalType>, right: Box<LvalType>},
-    FirstArgumentDoesNotEvalTo {expect: LvalTypeMeta, got: Box<LvalType>},
-    SymbolNotBinded {sym: String},
-    InvalidOperand { op: String },
-    WrongNumberOfArgs {lval: Box<Lval>, expect: usize, got: usize},
-    LambdaWrongNumberOfArgs {llambda: Box<LLambda>, expect: usize, got: usize},
-    LambdaWrongGenericError {llambda: Box<LLambda>, msg: String},
-    IncompatibleNumberOfArgs {lval_left: Box<Lval>, expect_left: usize, expect_right: usize, lval_right: Box<Lval>, got_left: usize, got_right: usize},
-    WrongType {lval: Box<Lval>, expect: LvalTypeMeta , got: Box<LvalType>},
+    CantCompare {
+        left: Box<LvalType>,
+        right: Box<LvalType>,
+    },
+    FirstArgumentDoesNotEvalTo {
+        expect: LvalTypeMeta,
+        got: Box<LvalType>,
+    },
+    SymbolNotBinded {
+        sym: String,
+    },
+    InvalidOperand {
+        op: String,
+    },
+    WrongNumberOfArgs {
+        lval: Box<Lval>,
+        expect: usize,
+        got: usize,
+    },
+    LambdaWrongNumberOfArgs {
+        llambda: Box<LLambda>,
+        expect: usize,
+        got: usize,
+    },
+    LambdaWrongGenericError {
+        llambda: Box<LLambda>,
+        msg: String,
+    },
+    IncompatibleNumberOfArgs {
+        lval_left: Box<Lval>,
+        expect_left: usize,
+        expect_right: usize,
+        lval_right: Box<Lval>,
+        got_left: usize,
+        got_right: usize,
+    },
+    WrongType {
+        lval: Box<Lval>,
+        expect: LvalTypeMeta,
+        got: Box<LvalType>,
+    },
 }
 
 impl std::fmt::Display for Lerror {
@@ -62,7 +98,7 @@ impl From<LvalType> for LvalTypeMeta {
             LvalType::LVAL_STRING(_) => LvalTypeMeta::LvalString,
             LvalType::LVAL_BOOL(_) => LvalTypeMeta::LvalBool,
             LvalType::LVAL_SEXPR => LvalTypeMeta::LvalSexpr,
-            LvalType::LVAL_QEXPR => LvalTypeMeta::LvalQexpr
+            LvalType::LVAL_QEXPR => LvalTypeMeta::LvalQexpr,
         }
     }
 }
