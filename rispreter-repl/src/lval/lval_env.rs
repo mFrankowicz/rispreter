@@ -1,4 +1,3 @@
-use crate::lval::lval_builtin::Lbuiltin;
 use crate::lval::lval_def::Lval;
 use crate::lval::lval_error::Lerror;
 use fnv::FnvHashMap;
@@ -15,11 +14,6 @@ pub struct Lenv {
 impl Lenv {
     pub fn new() -> Rc<Lenv> {
         Lenv::init(None)
-    }
-
-    pub fn add_builtin(&self, key: &str, b: Lbuiltin) {
-        let mut vals = self.vals.borrow_mut();
-        vals.insert(key.to_string(), Lval::lval_fun(b));
     }
 
     pub fn from(parent: &Rc<Lenv>) -> Rc<Lenv> {

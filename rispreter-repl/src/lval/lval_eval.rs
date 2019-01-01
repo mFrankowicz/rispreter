@@ -8,7 +8,9 @@ pub fn lval_eval(lenv: &Rc<Lenv>, lval: &mut Lval) -> Lval {
     match &lval.ltype {
         LvalType::LVAL_SYM(sym) => lenv.get(sym.to_string()).unwrap(),
         LvalType::LVAL_SEXPR => lval_eval_sexpr(lenv, lval),
-        _ => lval.clone(),
+        _ => {
+            lval.clone()
+        },
     }
 }
 
@@ -122,7 +124,6 @@ pub fn lval_call(lenv: &Rc<Lenv>, f: &mut Lval, lval: &mut Lval) -> Lval {
 #[cfg(test)]
 pub mod tests {
     use super::*;
-    use crate::lval::lval_builtin::*;
     use crate::lval::lval_env::Lenv;
     // use crate::lval_def::*;
 
@@ -150,7 +151,7 @@ pub mod tests {
     ///     2
     fn test_lval_sexpr() {
         let mut env = Lenv::new();
-        Lbuiltin::add_builtins(&mut env);
+        //Lbuiltin::add_builtins(&mut env);
 
         let mut top = Lval::lval_sexpr();
         let first = Lval::lval_sym("+".to_string());
@@ -166,7 +167,7 @@ pub mod tests {
     ///     6
     fn test_lval_sexpr_with_sexpr() {
         let mut env = Lenv::new();
-        Lbuiltin::add_builtins(&mut env);
+        //Lbuiltin::add_builtins(&mut env);
 
         let mut top = Lval::lval_sexpr();
         let first = Lval::lval_sym("+".to_string());
@@ -189,7 +190,7 @@ pub mod tests {
     ///     1
     fn head_expr() {
         let mut env = Lenv::new();
-        Lbuiltin::add_builtins(&mut env);
+        //Lbuiltin::add_builtins(&mut env);
 
         let mut top = Lval::lval_sexpr();
         let head = Lval::lval_sym("head".to_string());

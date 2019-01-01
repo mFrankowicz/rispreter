@@ -8,115 +8,92 @@ use std::rc::Rc;
 pub struct Lbuiltin(pub fn(lenv: &Rc<Lenv>, lval: &mut Lval) -> Lval, String);
 
 impl Lbuiltin {
-    pub fn add_builtins(lenv: &Rc<Lenv>) {
-        lenv.add_builtin("\\", Lbuiltin::lbuiltin_lambda());
-        lenv.add_builtin("def", Lbuiltin::lbuiltin_def());
-        lenv.add_builtin("=", Lbuiltin::lbuiltin_put());
-
-        lenv.add_builtin("list", Lbuiltin::lbuiltin_list());
-        lenv.add_builtin("head", Lbuiltin::lbuiltin_head());
-        lenv.add_builtin("tail", Lbuiltin::lbuiltin_tail());
-        lenv.add_builtin("eval", Lbuiltin::lbuiltin_eval());
-        lenv.add_builtin("join", Lbuiltin::lbuiltin_join());
-        lenv.add_builtin("cons", Lbuiltin::lbuiltin_cons());
-
-        lenv.add_builtin("+", Lbuiltin::lbuiltin_add());
-        lenv.add_builtin("-", Lbuiltin::lbuiltin_sub());
-        lenv.add_builtin("*", Lbuiltin::lbuiltin_mul());
-        lenv.add_builtin("/", Lbuiltin::lbuiltin_div());
-        lenv.add_builtin("%", Lbuiltin::lbuiltin_mod());
-
-        lenv.add_builtin("if", Lbuiltin::lbuiltin_if());
-        lenv.add_builtin("eq", Lbuiltin::lbuiltin_eq());
-        lenv.add_builtin("neq", Lbuiltin::lbuiltin_neq());
-        lenv.add_builtin("gt", Lbuiltin::lbuiltin_gt());
-        lenv.add_builtin("lt", Lbuiltin::lbuiltin_lt());
-        lenv.add_builtin("gte", Lbuiltin::lbuiltin_gte());
-        lenv.add_builtin("lte", Lbuiltin::lbuiltin_lte());
-    }
-
-    fn lbuiltin_add() -> Lbuiltin {
+    pub fn lbuiltin_add() -> Lbuiltin {
         Lbuiltin(add, "+".to_string())
     }
 
-    fn lbuiltin_sub() -> Lbuiltin {
+    pub fn lbuiltin_sub() -> Lbuiltin {
         Lbuiltin(sub, "-".to_string())
     }
 
-    fn lbuiltin_mul() -> Lbuiltin {
+    pub fn lbuiltin_mul() -> Lbuiltin {
         Lbuiltin(mul, "*".to_string())
     }
 
-    fn lbuiltin_div() -> Lbuiltin {
+    pub fn lbuiltin_div() -> Lbuiltin {
         Lbuiltin(div, "/".to_string())
     }
 
-    fn lbuiltin_mod() -> Lbuiltin {
+    pub fn lbuiltin_mod() -> Lbuiltin {
         Lbuiltin(modl, "mod".to_string())
     }
 
-    fn lbuiltin_head() -> Lbuiltin {
+    pub fn lbuiltin_head() -> Lbuiltin {
         Lbuiltin(head, "head".to_string())
     }
 
-    fn lbuiltin_tail() -> Lbuiltin {
+    pub fn lbuiltin_tail() -> Lbuiltin {
         Lbuiltin(tail, "tail".to_string())
     }
 
-    fn lbuiltin_list() -> Lbuiltin {
+    pub fn lbuiltin_list() -> Lbuiltin {
         Lbuiltin(list, "list".to_string())
     }
 
-    fn lbuiltin_join() -> Lbuiltin {
+    pub fn lbuiltin_join() -> Lbuiltin {
         Lbuiltin(join, "join".to_string())
     }
 
-    fn lbuiltin_cons() -> Lbuiltin {
+    pub fn lbuiltin_cons() -> Lbuiltin {
         Lbuiltin(cons, "cons".to_string())
     }
 
-    fn lbuiltin_eval() -> Lbuiltin {
+    pub fn lbuiltin_eval() -> Lbuiltin {
         Lbuiltin(eval, "eval".to_string())
     }
 
-    fn lbuiltin_def() -> Lbuiltin {
+    pub fn lbuiltin_def() -> Lbuiltin {
         Lbuiltin(def, "def".to_string())
     }
 
-    fn lbuiltin_put() -> Lbuiltin {
+    pub fn lbuiltin_put() -> Lbuiltin {
         Lbuiltin(put, "=".to_string())
     }
 
-    fn lbuiltin_lambda() -> Lbuiltin {
+    pub fn lbuiltin_lambda() -> Lbuiltin {
         Lbuiltin(lambda, "\\".to_string())
     }
 
-    fn lbuiltin_eq() -> Lbuiltin {
+    pub fn lbuiltin_eq() -> Lbuiltin {
         Lbuiltin(eq, "eq".to_string())
     }
 
-    fn lbuiltin_neq() -> Lbuiltin {
+    pub fn lbuiltin_neq() -> Lbuiltin {
         Lbuiltin(neq, "neq".to_string())
     }
 
-    fn lbuiltin_gt() -> Lbuiltin {
+    pub fn lbuiltin_gt() -> Lbuiltin {
         Lbuiltin(gt, "gt".to_string())
     }
 
-    fn lbuiltin_lt() -> Lbuiltin {
+    pub fn lbuiltin_lt() -> Lbuiltin {
         Lbuiltin(lt, "lt".to_string())
     }
 
-    fn lbuiltin_gte() -> Lbuiltin {
+    pub fn lbuiltin_gte() -> Lbuiltin {
         Lbuiltin(gte, "gte".to_string())
     }
 
-    fn lbuiltin_lte() -> Lbuiltin {
+    pub fn lbuiltin_lte() -> Lbuiltin {
         Lbuiltin(lte, "lte".to_string())
     }
 
-    fn lbuiltin_if() -> Lbuiltin {
+    pub fn lbuiltin_if() -> Lbuiltin {
         Lbuiltin(lif, "if".to_string())
+    }
+
+    pub fn lbuiltin_get() -> Lbuiltin {
+        Lbuiltin(get, "get".to_string())
     }
 }
 
@@ -682,49 +659,6 @@ fn put(env: &Rc<Lenv>, lval: &mut Lval) -> Lval {
 }
 
 fn var(env: &Rc<Lenv>, lval: &mut Lval, func: &str) -> Lval {
-    // if let LvalType::LVAL_QEXPR = &lval.cell[0].ltype {
-    // } else {
-    //     return Lval::lval_err(format!(
-    //         "not a Q-expression got {}, expect {}",
-    //         lval.ltype,
-    //         LvalType::LVAL_QEXPR
-    //     ));
-    // }
-    // let left_len = lval.cell[0].cell.len();
-    // let mut right_len = 0;
-    // for _ in 1..lval.cell.len() {
-    //     right_len += 1;
-    // }
-    // if left_len != right_len {
-    //     return Lval::lval_err(format!("'def' expects a equal number of bindings. Got left: {} right: {}, expects left: {} right: {}",
-    //                                 left_len, right_len, left_len, left_len));
-    // }
-    //
-    // for cell in lval.cell[0].cell.clone() {
-    //     match cell.ltype {
-    //         LvalType::LVAL_SYM(_sym) => {
-    //             continue;
-    //         }
-    //         _ => return Lval::lval_error_type(cell.ltype, LvalType::LVAL_SYM("symbol".to_string())),
-    //     }
-    // }
-    //
-    // let symbols_list = lval.lval_pop();
-    //
-    // for i in 0..symbols_list.cell.len() {
-    //     if let LvalType::LVAL_SYM(str) = &symbols_list.cell[i].ltype {
-    //         match func {
-    //             "def" => {
-    //                 env.def(str.to_string(), *lval.cell[i].clone()).unwrap();
-    //             }
-    //             "put" => {
-    //                 env.put(str.to_string(), *lval.cell[i].clone()).unwrap();
-    //             }
-    //             _ => {}
-    //         }
-    //     }
-    // }
-
     if let LvalType::LVAL_QEXPR = &lval.cell[0].ltype {
     } else {
         return Lval::lval_err(Lerror::WrongType {
@@ -745,11 +679,13 @@ fn var(env: &Rc<Lenv>, lval: &mut Lval, func: &str) -> Lval {
         }
     }
     if syms.cell.len() != lval.cell.len() - 1 {
+        let mut wrong_lval = lval.clone();
+        wrong_lval.lval_pop();
         return Lval::lval_err(Lerror::IncompatibleNumberOfArgs {
             lval_left: syms.clone(),
             expect_left: syms.cell.len(),
             expect_right: syms.cell.len(),
-            lval_right: Box::new(lval.clone()),
+            lval_right: Box::new(wrong_lval),
             got_left: syms.cell.len(),
             got_right: lval.cell.len() - 1,
         });
@@ -769,6 +705,26 @@ fn var(env: &Rc<Lenv>, lval: &mut Lval, func: &str) -> Lval {
         }
     }
     Lval::lval_sexpr()
+}
+
+fn get(_env: &Rc<Lenv>, lval: &mut Lval) -> Lval {
+
+    // let index = lval.lval_pop();
+    // let vec = lval.lval_pop();
+
+    if lval.cell.len() == 2 {
+        if let LvalType::LVAL_NUM(n) = lval.cell[0].ltype {
+            if let LvalType::LVAL_NUM_VEC(v) = &lval.cell[1].ltype {
+                Lval::lval_num(v[n as usize] as f64)
+            } else {
+                Lval::lval_err(Lerror::WrongType {lval: Box::new(lval.clone()), got: Box::new(lval.cell[1].ltype.clone()), expect: LvalTypeMeta::LvalIntVec})
+            }
+        } else {
+            Lval::lval_err(Lerror::WrongType {lval: Box::new(lval.clone()), got: Box::new(lval.cell[0].ltype.clone()), expect: LvalTypeMeta::LvalNum})
+        }
+    } else {
+        Lval::lval_err(Lerror::WrongNumberOfArgs{lval: Box::new(lval.clone()), got: lval.cell.len(), expect: 2 })
+    }
 }
 
 fn lambda(_env: &Rc<Lenv>, lval: &mut Lval) -> Lval {
@@ -971,7 +927,7 @@ mod tests {
     #[test]
     fn lbuiltin_eval() {
         let mut lenv = Lenv::new();
-        Lbuiltin::add_builtins(&mut lenv);
+        //Lbuiltin::add_builtins(&mut lenv);
         let mut top = Lval::lval_sexpr();
 
         let mut sub = Lval::lval_qexpr();

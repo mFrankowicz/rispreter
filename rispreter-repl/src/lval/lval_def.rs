@@ -14,7 +14,9 @@ pub enum LvalType {
     LVAL_FUN(Lbuiltin),
     LVAL_LAMBDA(LLambda),
     LVAL_STRING(String),
+    LVAL_CHAR(char),
     LVAL_BOOL(bool),
+    LVAL_NUM_VEC(Vec<f64>),
     LVAL_SEXPR,
     LVAL_QEXPR,
 }
@@ -26,11 +28,13 @@ impl fmt::Display for LvalType {
             LvalType::LVAL_NUM(num) => write!(f, "{}", num),
             LvalType::LVAL_SYM(sym) => write!(f, "{}", sym),
             LvalType::LVAL_STRING(str) => write!(f, "\"{}\"", str),
+            LvalType::LVAL_CHAR(ch) => write!(f, "'{}'", ch),
             LvalType::LVAL_FUN(fun) => write!(f, "{:?}", fun),
             LvalType::LVAL_LAMBDA(lambda) => {
                 writeln!(f, "body: {:?}", lambda.body.cell)?;
                 writeln!(f, "formals: {:?}", lambda.formals.cell)
             }
+            LvalType::LVAL_NUM_VEC(v) => write!(f, "#{:?}", v),
             LvalType::LVAL_SEXPR => write!(f, "()"),
             LvalType::LVAL_QEXPR => write!(f, "{{}}"),
             LvalType::LVAL_BOOL(b) => write!(f, "{}", b),
@@ -45,11 +49,13 @@ impl fmt::Debug for LvalType {
             LvalType::LVAL_NUM(num) => write!(f, "{}", num),
             LvalType::LVAL_SYM(sym) => write!(f, "{}", sym),
             LvalType::LVAL_STRING(str) => write!(f, "\"{}\"", str),
+            LvalType::LVAL_CHAR(ch) => write!(f, "'{}'", ch),
             LvalType::LVAL_FUN(fun) => write!(f, "{:?}", fun),
             LvalType::LVAL_LAMBDA(lambda) => {
                 writeln!(f, "body: {:?}", lambda.body.cell)?;
                 writeln!(f, "formals: {:?}", lambda.formals.cell)
             }
+            LvalType::LVAL_NUM_VEC(v) => write!(f, "{:?}", v),
             LvalType::LVAL_SEXPR => write!(f, "()"),
             LvalType::LVAL_QEXPR => write!(f, "{{}}"),
             LvalType::LVAL_BOOL(b) => write!(f, "{}", b),
@@ -88,6 +94,20 @@ impl Lval {
     pub fn lval_string(str: String) -> Lval {
         Lval {
             ltype: LvalType::LVAL_STRING(str),
+            cell: VecDeque::new(),
+        }
+    }
+
+    pub fn lval_char(ch: char) -> Lval {
+        Lval {
+            ltype: LvalType::LVAL_CHAR(ch),
+            cell: VecDeque::new(),
+        }
+    }
+
+    pub fn lval_int_vec(v: Vec<f64>) -> Lval {
+        Lval {
+            ltype: LvalType::LVAL_NUM_VEC(v),
             cell: VecDeque::new(),
         }
     }
@@ -171,8 +191,12 @@ impl fmt::Display for Lval {
                     write!(f, "{}", self.ltype)
                 } else {
                     write!(f, "(")?;
-                    for elem in self.cell.iter() {
-                        write!(f, " {} ", elem)?;
+                    for i in 0..self.cell.len() {
+                        if i == 0 {
+                            write!(f, "{}", self.cell[i])?;
+                        } else {
+                            write!(f, " {}", self.cell[i])?;
+                        }
                     }
                     write!(f, ")")
                 }
@@ -182,8 +206,12 @@ impl fmt::Display for Lval {
                     write!(f, "{}", self.ltype)
                 } else {
                     write!(f, "{{")?;
-                    for elem in self.cell.iter() {
-                        write!(f, " {} ", elem)?;
+                    for i in 0..self.cell.len() {
+                        if i == 0 {
+                            write!(f, "{}", self.cell[i])?;
+                        } else {
+                            write!(f, " {}", self.cell[i])?;
+                        }
                     }
                     write!(f, "}}")
                 }
