@@ -2,7 +2,7 @@ use crate::lval::lval_builtin::Lbuiltin;
 use crate::lval::lval_def::*;
 use crate::lval::lval_error::Lerror;
 
-use rispreter_parser::structures::{NumType, Prelude, Risp, TypedVec};
+use rispreter_parser::structure::{NumType, Prelude, Risp, TypedVec};
 
 pub fn read(parsed: Option<Risp>) -> Lval {
     match parsed {

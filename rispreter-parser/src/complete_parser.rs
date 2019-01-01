@@ -1,7 +1,7 @@
 use crate::prelude::risp_prelude;
-use crate::structures::NumType;
-use crate::structures::Risp;
-use crate::structures::TypedVec;
+use crate::structure::NumType;
+use crate::structure::Risp;
+use crate::structure::TypedVec;
 
 use nom::digit;
 use nom::types::CompleteStr;

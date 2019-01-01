@@ -1,5 +1,5 @@
-use crate::structures::Prelude;
-use crate::structures::Risp;
+use crate::structure::Prelude;
+use crate::structure::Risp;
 use nom::types::CompleteStr;
 use nom::*;
 
