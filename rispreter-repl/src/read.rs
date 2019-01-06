@@ -7,6 +7,9 @@ use rispreter_parser::structure::{NumType, Prelude, Risp, TypedVec};
 pub fn read(parsed: Option<Risp>) -> Lval {
     match parsed {
         Some(some) => match some {
+            Risp::LComment => {
+                Lval::lval_sexpr()
+            }
             Risp::Sexpr(lvals) => {
                 let mut sexpr = Lval::lval_sexpr();
                 for lval in lvals {
@@ -57,9 +60,6 @@ pub fn read(parsed: Option<Risp>) -> Lval {
                 Prelude::Lte => Lval::lval_fun(Lbuiltin::lbuiltin_lte()),
                 Prelude::Get => Lval::lval_fun(Lbuiltin::lbuiltin_get()),
             },
-            _ => Lval::lval_err(Lerror::GenericError {
-                msg: "incomplete".to_string(),
-            }),
         },
         None => Lval::lval_err(Lerror::GenericError {
             msg: "Parser error".to_string(),

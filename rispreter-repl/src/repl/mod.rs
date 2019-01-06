@@ -4,6 +4,7 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;
 use std::rc::Rc;
+use std::sync::Arc;
 
 use linefeed::*;
 use std::io;
@@ -87,7 +88,14 @@ impl RispRepl {
 
         let interface = Interface::new("risp-repl")?;
 
-        interface.set_prompt(">>>> ")?;
+        interface.set_prompt("> ")?;
+
+        interface.define_function("enter-function", Arc::new(EnterFunction));
+        interface.bind_sequence("\r", Command::from_str("enter-function"));
+        interface.bind_sequence("\n", Command::from_str("enter-function"));
+
+        interface.define_function("tab-function", Arc::new(TabFunction));
+        interface.bind_sequence("\t", Command::from_str("tab-function"));
 
         while let ReadResult::Input(line) = interface.read_line()? {
             println!("{}", eval_rispreter(&self.env, &line));
@@ -119,6 +127,32 @@ impl RispRepl {
                 println!("File not found: {:?}", err);
                 std::process::exit(1);
             }
+        }
+    }
+}
+
+struct EnterFunction;
+
+impl <Term: Terminal> Function<Term> for EnterFunction {
+    fn execute(&self, prompter: &mut Prompter<Term>, count: i32, _ch: char) -> io::Result<()> {
+        if prompter.buffer().ends_with('.') {
+            prompter.accept_input()
+        } else if count > 0 {
+            prompter.insert(count as usize, '\n')?;
+            prompter.insert(2, ' ')
+        } else {
+            Ok(())
+        }
+    }
+}
+
+struct TabFunction;
+impl <Term: Terminal> Function<Term> for TabFunction {
+    fn execute(&self, prompter: &mut Prompter<Term>, _count: i32, ch: char) -> io::Result<()> {
+        if ch == '\t' {
+            prompter.insert(4, ' ')
+        } else {
+            Ok(())
         }
     }
 }

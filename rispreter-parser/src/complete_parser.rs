@@ -56,6 +56,7 @@ named!(
     ws!(
         do_parse!(
             tag!(";") >>
+            opt!(multispace) >>
             take_until!("\n") >>
             (
                 Risp::LComment
@@ -200,7 +201,12 @@ named!(
 // risp_val
 named!(
     risp_val<CompleteStr, Risp>,
-    alt!( risp_sexpr | risp_qexpr | risp_int_vec_literal | risp_float | risp_integer | risp_bool | risp_prelude | risp_symbol | risp_string | risp_comment | risp_char)
+    do_parse!(
+        opt!(multispace) >>
+        val: alt!( risp_comment | risp_sexpr | risp_qexpr | risp_int_vec_literal | risp_float | risp_integer | risp_bool | risp_prelude | risp_symbol | risp_string | risp_char) >>
+        opt!(ws!(tag!("."))) >>
+        (val)
+    )
 );
 
 named!(risp_int_vec_literal<CompleteStr, Risp>,
@@ -228,7 +234,7 @@ pub fn parse_risp(input: &str) -> Option<Risp> {
                 )))
             }
         }
-        Err(e) => Some(Risp::LSyntaxErr(format!("{:?}", e))),
+        Err(e) => Some(Risp::LSyntaxErr(format!("syntax err: {:?}", e))),
     }
 }
 
@@ -239,11 +245,20 @@ mod tests {
     #[test]
     fn parse_multiline() {
         let expression = "(+ 1 2 \n
-                            (+ 3 4))";
+                            (+ 3 4)).";
 
         let result = parse_risp(expression);
         match result {
             None => panic!("parse error"),
+            _ => {}
+        }
+    }
+
+    #[test]
+    fn parse_comment() {
+        let comment = parse_risp("; a comment\n");
+        match comment {
+            None => panic!("comment parse error"),
             _ => {}
         }
     }
