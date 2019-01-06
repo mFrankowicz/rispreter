@@ -39,7 +39,7 @@ pub fn lval_eval_sexpr(lenv: &Rc<Lenv>, lval: &mut Lval) -> Lval {
 pub fn lval_call(lenv: &Rc<Lenv>, f: &mut Lval, lval: &mut Lval) -> Lval {
     match f.ltype.clone() {
         // if builtin we return
-        LvalType::LVAL_FUN(builtin) => builtin.clone().0(lenv, lval),
+        LvalType::LVAL_FUN(builtin) => builtin.clone().0(Some(lenv), lval),
         // if we have a lambda expression then...
         LvalType::LVAL_LAMBDA(mut lambda) => {
             // record argument counts
@@ -68,7 +68,7 @@ pub fn lval_call(lenv: &Rc<Lenv>, f: &mut Lval, lval: &mut Lval) -> Lval {
                         let next_sym = lambda.formals.lval_pop();
                         lambda
                             .local_lenv
-                            .put(next_sym.to_string(), lval_builtin::list(lenv, lval))
+                            .put(next_sym.to_string(), lval_builtin::list(None, lval))
                             .unwrap();
                         break;
                     }
@@ -107,7 +107,7 @@ pub fn lval_call(lenv: &Rc<Lenv>, f: &mut Lval, lval: &mut Lval) -> Lval {
                 // evaluetes in this new context
 
                 lval_builtin::eval(
-                    &lambda.local_lenv,
+                    Some(&lambda.local_lenv),
                     Lval::lval_sexpr().add_cell(*lambda.body),
                 )
             } else {
