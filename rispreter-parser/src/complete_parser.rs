@@ -7,7 +7,6 @@ use nom::digit;
 use nom::types::CompleteStr;
 use nom::*;
 
-// risp_integer
 named!(
     integer<CompleteStr, f64>,
     do_parse!(
@@ -232,5 +231,24 @@ pub fn parse_risp(input: &str) -> Option<Risp> {
             }
         }
         Err(e) => Some(Risp::LSyntaxErr(format!("{:?}", e))),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_multiline() {
+        let expression = "(+ 1 2 \n
+                            (+ 3 4))";
+
+        let result = parse_risp(expression);
+        match result {
+            None => panic!("parse error"),
+            _ => {
+
+            }
+        }
     }
 }
