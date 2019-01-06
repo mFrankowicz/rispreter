@@ -8,9 +8,7 @@ pub fn lval_eval(lenv: &Rc<Lenv>, lval: &mut Lval) -> Lval {
     match &lval.ltype {
         LvalType::LVAL_SYM(sym) => lenv.get(sym.to_string()).unwrap(),
         LvalType::LVAL_SEXPR => lval_eval_sexpr(lenv, lval),
-        _ => {
-            lval.clone()
-        },
+        _ => lval.clone(),
     }
 }
 

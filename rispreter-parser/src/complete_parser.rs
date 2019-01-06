@@ -50,7 +50,6 @@ named!(number<CompleteStr, f64>,
     alt!(integer | float)
 );
 
-
 // risp_comment
 named!(
     risp_comment<CompleteStr, Risp>,
@@ -204,7 +203,6 @@ named!(
     alt!( risp_sexpr | risp_qexpr | risp_int_vec_literal | risp_float | risp_integer | risp_bool | risp_prelude | risp_symbol | risp_string | risp_comment | risp_char)
 );
 
-
 named!(risp_int_vec_literal<CompleteStr, Risp>,
     do_parse!(
         terminated!(tag!("#["), opt!(multispace)) >>
@@ -246,9 +244,7 @@ mod tests {
         let result = parse_risp(expression);
         match result {
             None => panic!("parse error"),
-            _ => {
-
-            }
+            _ => {}
         }
     }
 }

@@ -5,7 +5,10 @@ use crate::lval::lval_eval;
 use std::rc::Rc;
 //use crate::lval::lval_lambda::LLambda;
 
-pub struct Lbuiltin(pub fn(lenv: Option<&Rc<Lenv>>, lval: &mut Lval) -> Lval, String);
+pub struct Lbuiltin(
+    pub fn(lenv: Option<&Rc<Lenv>>, lval: &mut Lval) -> Lval,
+    String,
+);
 
 impl Lbuiltin {
     pub fn lbuiltin_add() -> Lbuiltin {
@@ -695,10 +698,14 @@ fn var(env: Option<&Rc<Lenv>>, lval: &mut Lval, func: &str) -> Lval {
         if let LvalType::LVAL_SYM(str) = &syms.cell[i].ltype {
             match func {
                 "def" => {
-                    env.unwrap().def(str.to_string(), *lval.cell[i + 1].clone()).unwrap();
+                    env.unwrap()
+                        .def(str.to_string(), *lval.cell[i + 1].clone())
+                        .unwrap();
                 }
                 "put" => {
-                    env.unwrap().put(str.to_string(), *lval.cell[i + 1].clone()).unwrap();
+                    env.unwrap()
+                        .put(str.to_string(), *lval.cell[i + 1].clone())
+                        .unwrap();
                 }
                 _ => {}
             }
@@ -708,7 +715,6 @@ fn var(env: Option<&Rc<Lenv>>, lval: &mut Lval, func: &str) -> Lval {
 }
 
 fn get(_env: Option<&Rc<Lenv>>, lval: &mut Lval) -> Lval {
-
     // let index = lval.lval_pop();
     // let vec = lval.lval_pop();
 
@@ -717,13 +723,25 @@ fn get(_env: Option<&Rc<Lenv>>, lval: &mut Lval) -> Lval {
             if let LvalType::LVAL_NUM_VEC(v) = &lval.cell[1].ltype {
                 Lval::lval_num(v[n as usize] as f64)
             } else {
-                Lval::lval_err(Lerror::WrongType {lval: Box::new(lval.clone()), got: Box::new(lval.cell[1].ltype.clone()), expect: LvalTypeMeta::LvalIntVec})
+                Lval::lval_err(Lerror::WrongType {
+                    lval: Box::new(lval.clone()),
+                    got: Box::new(lval.cell[1].ltype.clone()),
+                    expect: LvalTypeMeta::LvalIntVec,
+                })
             }
         } else {
-            Lval::lval_err(Lerror::WrongType {lval: Box::new(lval.clone()), got: Box::new(lval.cell[0].ltype.clone()), expect: LvalTypeMeta::LvalNum})
+            Lval::lval_err(Lerror::WrongType {
+                lval: Box::new(lval.clone()),
+                got: Box::new(lval.cell[0].ltype.clone()),
+                expect: LvalTypeMeta::LvalNum,
+            })
         }
     } else {
-        Lval::lval_err(Lerror::WrongNumberOfArgs{lval: Box::new(lval.clone()), got: lval.cell.len(), expect: 2 })
+        Lval::lval_err(Lerror::WrongNumberOfArgs {
+            lval: Box::new(lval.clone()),
+            got: lval.cell.len(),
+            expect: 2,
+        })
     }
 }
 

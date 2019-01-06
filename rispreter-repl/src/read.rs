@@ -21,11 +21,9 @@ pub fn read(parsed: Option<Risp>) -> Lval {
                 }
                 qexpr
             }
-            Risp::LVec(v) => {
-                match v {
-                    TypedVec::NumVec(v) => Lval::lval_int_vec(v)
-                }
-            }
+            Risp::LVec(v) => match v {
+                TypedVec::NumVec(v) => Lval::lval_int_vec(v),
+            },
             Risp::LNumber(numtype) => match numtype {
                 NumType::Float(f) => Lval::lval_num(f),
                 NumType::Int(i) => Lval::lval_num(i as f64),

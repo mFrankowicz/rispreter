@@ -21,7 +21,6 @@ impl RispRepl {
     }
 
     pub fn run(&self) -> io::Result<()> {
-
         let prelude = "(def {fun} (\\ {args body} {def (head args) (\\ (tail args) body)}))
 (fun {unpack f xs} {eval (join (list f) xs)})
 (fun {pack f & xs} {f xs})
@@ -57,7 +56,6 @@ impl RispRepl {
 (fun {fib n} { select { (== n 0) 0 } { (== n 1) 1 } { otherwise (+ (fib (- n 1)) (fib (- n 2))) } })
 ".to_string();
 
-
         //Lbuiltin::add_builtins(&self.env);
         let yaml = load_yaml!("cli.yml");
         let matches = App::from_yaml(yaml).get_matches();
@@ -80,7 +78,7 @@ impl RispRepl {
 
         println!("loading prelude library: ");
         for lines in prelude.lines() {
-                println!("{}", eval_rispreter(&self.env, &lines));
+            println!("{}", eval_rispreter(&self.env, &lines));
         }
         println!("enjoy!");
         println!("_______________________________________________");
