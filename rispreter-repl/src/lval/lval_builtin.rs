@@ -98,6 +98,91 @@ impl Lbuiltin {
     pub fn lbuiltin_get() -> Lbuiltin {
         Lbuiltin(get, "get".to_string())
     }
+
+    pub fn lbuiltin_fun() -> Lbuiltin {
+        Lbuiltin(fun, "fun".to_string())
+    }
+
+    pub fn lbuiltin_curry() -> Lbuiltin {
+        Lbuiltin(curry, "curry".to_string())
+    }
+
+    pub fn lbuiltin_uncurry() -> Lbuiltin {
+        Lbuiltin(uncurry, "uncurry".to_string())
+    }
+
+    pub fn lbuiltin_fst() -> Lbuiltin {
+        Lbuiltin(fst, "fst".to_string())
+    }
+
+    pub fn lbuiltin_snd() -> Lbuiltin {
+        Lbuiltin(snd, "snd".to_string())
+    }
+
+    pub fn lbuiltin_trd() -> Lbuiltin {
+        Lbuiltin(trd, "trd".to_string())
+    }
+
+    pub fn lbuiltin_nth() -> Lbuiltin {
+        Lbuiltin(nth, "nth".to_string())
+    }
+
+    pub fn lbuiltin_last() -> Lbuiltin {
+        Lbuiltin(last, "last".to_string())
+    }
+
+    pub fn lbuiltin_do() -> Lbuiltin {
+        Lbuiltin(ldo, "do".to_string())
+    }
+
+    pub fn lbuiltin_let() -> Lbuiltin {
+        Lbuiltin(llet, "let".to_string())
+    }
+
+    pub fn lbuiltin_not() -> Lbuiltin {
+        Lbuiltin(not, "not".to_string())
+    }
+
+    pub fn lbuiltin_and() -> Lbuiltin {
+        Lbuiltin(and, "and".to_string())
+    }
+
+    pub fn lbuiltin_or() -> Lbuiltin {
+        Lbuiltin(or, "or".to_string())
+    }
+
+    pub fn lbuiltin_xor() -> Lbuiltin {
+        Lbuiltin(xor, "xor".to_string())
+    }
+
+    pub fn lbuiltin_select() -> Lbuiltin {
+        Lbuiltin(select, "select".to_string())
+    }
+
+    pub fn lbuiltin_take() -> Lbuiltin {
+        Lbuiltin(take, "take".to_string())
+    }
+
+    pub fn lbuiltin_drop() -> Lbuiltin {
+        Lbuiltin(drop, "drop".to_string())
+    }
+
+    pub fn lbuiltin_split() -> Lbuiltin {
+        Lbuiltin(split, "split".to_string())
+    }
+
+    pub fn lbuiltin_elemen() -> Lbuiltin {
+        Lbuiltin(elemen, "elemen".to_string())
+    }
+
+    pub fn lbuiltin_map() -> Lbuiltin {
+        Lbuiltin(map, "map".to_string())
+    }
+
+    pub fn lbuiltin_filter() -> Lbuiltin {
+        Lbuiltin(filter, "filter".to_string())
+    }
+
 }
 
 impl PartialEq for Lbuiltin {
@@ -458,9 +543,7 @@ fn head(_lenv: Option<&Rc<Lenv>>, lval: &mut Lval) -> Lval {
     }
 
     if qexpr.cell.is_empty() {
-        return Lval::lval_err(Lerror::EmptyList {
-            lval: Box::new(qexpr),
-        });
+        return Lval::lval_qexpr()
     }
 
     let mut head = Lval::lval_qexpr();
@@ -500,12 +583,10 @@ fn tail(_env: Option<&Rc<Lenv>>, lval: &mut Lval) -> Lval {
     }
 
     if qexpr.cell.is_empty() {
-        return Lval::lval_err(Lerror::EmptyList {
-            lval: Box::new(qexpr),
-        });
+        return Lval::lval_qexpr()
     }
 
-    qexpr.lval_split(1)
+    qexpr.lval_split(1).1
 }
 
 /// Transform all following arguments in a Q-expression
@@ -563,13 +644,13 @@ fn join(_env: Option<&Rc<Lenv>>, lval: &mut Lval) -> Lval {
     }
 
     let mut y = lval.lval_pop();
-    if y.cell.is_empty() {
-        return Lval::lval_err(Lerror::EmptyList { lval: Box::new(y) });
-    }
+    // if y.cell.is_empty() {
+    //     return Lval::lval_err(Lerror::EmptyList { lval: Box::new(y) });
+    // }
     let mut x = lval.lval_pop();
-    if x.cell.is_empty() {
-        return Lval::lval_err(Lerror::EmptyList { lval: Box::new(x) });
-    }
+    // if x.cell.is_empty() {
+    //     return Lval::lval_err(Lerror::EmptyList { lval: Box::new(x) });
+    // }
 
     y.cell.append(&mut x.cell);
     y
@@ -750,6 +831,240 @@ fn lambda(_env: Option<&Rc<Lenv>>, lval: &mut Lval) -> Lval {
     let body = lval.lval_pop();
 
     Lval::lval_lambda(formals, body)
+}
+
+fn fun(env: Option<&Rc<Lenv>>, lval: &mut Lval) -> Lval {
+    if lval.cell[0].ltype != LvalType::LVAL_QEXPR {
+        return Lval::lval_err(Lerror::WrongType {
+            lval: Box::new(lval.clone()),
+            got: Box::new(lval.cell[0].ltype.clone()),
+            expect: LvalTypeMeta::LvalQexpr,
+        });
+    }
+    let mut args = lval.lval_pop();
+    let body = lval.lval_pop();
+    let fun_name = &args.clone().cell[0].ltype;
+    let lambda = Lval::lval_lambda(args.lval_split(1).1, body);
+    if let LvalType::LVAL_SYM(ref str) = fun_name {
+        env.unwrap().def(str.to_string(), lambda).unwrap();
+        Lval::lval_sexpr()
+    } else {
+        Lval::lval_err(Lerror::GenericError {
+            msg: format!("Wronnng"),
+        })
+    }
+}
+
+fn curry(env: Option<&Rc<Lenv>>, lval: &mut Lval) -> Lval {
+    let op = lval.lval_pop();
+    let mut list = lval.lval_pop();
+    list.add_cell_front(op);
+    list.ltype = LvalType::LVAL_SEXPR;
+    lval_eval::lval_eval(env.unwrap(), &mut list)
+}
+
+fn uncurry(env: Option<&Rc<Lenv>>, lval: &mut Lval) -> Lval {
+    let op = lval.lval_pop();
+    lval.ltype = LvalType::LVAL_QEXPR;
+    let mut s = Lval::lval_sexpr();
+    s.add_cell(op).add_cell(lval.clone());
+    lval_eval::lval_eval(env.unwrap(), &mut s)
+}
+
+fn fst(env: Option<&Rc<Lenv>>, lval: &mut Lval) -> Lval {
+    let mut q = Lval::lval_sexpr();
+    q.add_cell(lval.lval_pop().lval_pop());
+    lval_eval::lval_eval(env.unwrap(), &mut q)
+}
+
+fn snd(env: Option<&Rc<Lenv>>, lval: &mut Lval) -> Lval {
+    let mut q = Lval::lval_sexpr();
+    q.add_cell(lval.lval_pop().lval_take(1));
+    lval_eval::lval_eval(env.unwrap(), &mut q)
+}
+
+fn trd(env: Option<&Rc<Lenv>>, lval: &mut Lval) -> Lval {
+    let mut q = Lval::lval_sexpr();
+    q.add_cell(lval.lval_pop().lval_take(2));
+    lval_eval::lval_eval(env.unwrap(), &mut q)
+}
+
+fn nth(env: Option<&Rc<Lenv>>, lval: &mut Lval) -> Lval {
+    let index = lval.lval_pop();
+    if let LvalType::LVAL_NUM(n) = index.ltype {
+        let mut q = Lval::lval_sexpr();
+        q.add_cell(lval.lval_pop().lval_take(n as usize));
+        lval_eval::lval_eval(env.unwrap(), &mut q)
+    } else {
+        Lval::lval_err(Lerror::GenericError {
+            msg: format!("wrong type"),
+        })
+    }
+}
+
+fn last(env: Option<&Rc<Lenv>>, lval: &mut Lval) -> Lval {
+    let mut q = Lval::lval_sexpr();
+    q.add_cell(lval.lval_pop().lval_pop_last());
+    lval_eval::lval_eval(env.unwrap(), &mut q)
+}
+
+fn ldo(env: Option<&Rc<Lenv>>, lval: &mut Lval) -> Lval {
+    if lval.cell.len() == 0 {
+        return Lval::lval_qexpr();
+    } else if lval.cell.len() == 1 {
+        return lval_eval::lval_eval(env.unwrap(), &mut lval.lval_pop());
+    }
+    for i in 0..lval.cell.len() - 1 {
+        lval_eval::lval_eval(env.unwrap(), &mut lval.cell[i]);
+    }
+    lval_eval::lval_eval(env.unwrap(), &mut lval.lval_pop_last())
+}
+
+fn llet(env: Option<&Rc<Lenv>>, lval: &mut Lval) -> Lval {
+    let s = Lval::lval_sexpr();
+    let body = lval.lval_pop();
+    println!("{}", body);
+    lval_eval::lval_eval(
+        env.unwrap(),
+        &mut s
+            .add_cell_move(Lval::lval_lambda(
+                Lval::lval_qexpr().add_cell_move(Lval::lval_sym("_".to_string())),
+                body,
+            ))
+            .add_cell_move(Lval::lval_sexpr()),
+    )
+}
+
+fn not(_env: Option<&Rc<Lenv>>, lval: &mut Lval) -> Lval {
+    if let LvalType::LVAL_BOOL(b) = lval.lval_pop().ltype {
+        if b == true {
+            Lval::lval_bool(false)
+        } else {
+            Lval::lval_bool(true)
+        }
+    } else {
+        Lval::lval_err(Lerror::GenericError {
+            msg: format!("Not a boolean"),
+        })
+    }
+}
+
+fn and(_env: Option<&Rc<Lenv>>, lval: &mut Lval) -> Lval {
+    let x = lval.lval_pop();
+    let y = lval.lval_pop();
+    if let (LvalType::LVAL_BOOL(a), LvalType::LVAL_BOOL(b)) = (x.ltype, y.ltype) {
+        Lval::lval_bool(a & b)
+    } else {
+        Lval::lval_err(Lerror::GenericError {
+            msg: format!("Not a boolean"),
+        })
+    }
+}
+
+fn or(_env: Option<&Rc<Lenv>>, lval: &mut Lval) -> Lval {
+    let x = lval.lval_pop();
+    let y = lval.lval_pop();
+    if let (LvalType::LVAL_BOOL(a), LvalType::LVAL_BOOL(b)) = (x.ltype, y.ltype) {
+        Lval::lval_bool(a | b)
+    } else {
+        Lval::lval_err(Lerror::GenericError {
+            msg: format!("Not a boolean"),
+        })
+    }
+}
+
+fn xor(_env: Option<&Rc<Lenv>>, lval: &mut Lval) -> Lval {
+    let x = lval.lval_pop();
+    let y = lval.lval_pop();
+    if let (LvalType::LVAL_BOOL(a), LvalType::LVAL_BOOL(b)) = (x.ltype, y.ltype) {
+        Lval::lval_bool(a ^ b)
+    } else {
+        Lval::lval_err(Lerror::GenericError {
+            msg: format!("Not a boolean"),
+        })
+    }
+}
+
+fn select(env: Option<&Rc<Lenv>>, lval: &mut Lval) -> Lval {
+    for i in lval.cell.iter_mut() {
+        let mut test = i.lval_pop();
+        if let LvalType::LVAL_BOOL(true) = lval_eval::lval_eval(env.unwrap(), &mut test).ltype {
+            return lval_eval::lval_eval(env.unwrap(), &mut i.lval_pop())
+        }
+    }
+    Lval::lval_err(Lerror::GenericError {msg : format!("Selection Not found")})
+}
+
+fn take(_env: Option<&Rc<Lenv>>, lval: &mut Lval) -> Lval {
+    let n = lval.lval_pop();
+    let mut b = lval.lval_pop();
+    if let LvalType::LVAL_NUM(n) = n.ltype {
+        b.lval_split(n as usize).0
+    } else {
+        Lval::lval_err(Lerror::GenericError {msg: format!("First argument isn't a number")})
+    }
+
+}
+
+fn drop(_env: Option<&Rc<Lenv>>, lval: &mut Lval) -> Lval {
+    let n = lval.lval_pop();
+    let mut b = lval.lval_pop();
+    if let LvalType::LVAL_NUM(n) = n.ltype {
+        b.lval_split(n as usize).1
+    } else {
+        Lval::lval_err(Lerror::GenericError {msg: format!("First argument isn't a number")})
+    }
+
+}
+
+fn split(_env: Option<&Rc<Lenv>>, lval: &mut Lval) -> Lval {
+    let n = lval.lval_pop();
+    let mut b = lval.lval_pop();
+    if let LvalType::LVAL_NUM(n) = n.ltype {
+        let spl = b.lval_split(n as usize);
+        Lval::lval_qexpr().add_cell_move(spl.0).add_cell_move(spl.1)
+    } else {
+        Lval::lval_err(Lerror::GenericError {msg: format!("First argument isn't a number")})
+    }
+}
+
+fn elemen(_env: Option<&Rc<Lenv>>, lval: &mut Lval) -> Lval {
+    let n = lval.lval_pop();
+    let mut b = lval.lval_pop();
+    if let LvalType::LVAL_NUM(n) = n.ltype {
+        b.lval_take(n as usize)
+    } else {
+        Lval::lval_err(Lerror::GenericError {msg: format!("First argument isn't a number")})
+    }
+}
+
+fn map(env: Option<&Rc<Lenv>>, lval: &mut Lval) -> Lval {
+    let f = lval.lval_pop();
+    let body = lval.lval_pop();
+    let mut q = Lval::lval_qexpr();
+    for i in body.cell.into_iter() {
+        let mut s = Lval::lval_sexpr();
+        s.add_cell(f.clone());
+        s.add_cell(*i);
+        q.add_cell(lval_eval::lval_eval(env.unwrap(), &mut s));
+    }
+    q
+}
+
+fn filter(env: Option<&Rc<Lenv>>, lval: &mut Lval) -> Lval {
+    let f = lval.lval_pop();
+    let body = lval.lval_pop();
+    let mut q = Lval::lval_qexpr();
+    for i in body.cell.into_iter() {
+        let mut s = Lval::lval_sexpr();
+        s.add_cell(f.clone());
+        s.add_cell(*i.clone());
+        let test = lval_eval::lval_eval(env.unwrap(), &mut s);
+        if let LvalType::LVAL_BOOL(true) = test.ltype {
+            q.add_cell(*i);
+        }
+    }
+    q
 }
 
 #[cfg(test)]

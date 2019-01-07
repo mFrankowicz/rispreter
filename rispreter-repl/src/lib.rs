@@ -1,3 +1,4 @@
+//#![recursion_limit="128"]
 extern crate linefeed;
 extern crate rispreter_parser;
 #[macro_use]

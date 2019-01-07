@@ -7,9 +7,7 @@ use rispreter_parser::structure::{NumType, Prelude, Risp, TypedVec};
 pub fn read(parsed: Option<Risp>) -> Lval {
     match parsed {
         Some(some) => match some {
-            Risp::LComment => {
-                Lval::lval_sexpr()
-            }
+            Risp::LComment => Lval::lval_sexpr(),
             Risp::Sexpr(lvals) => {
                 let mut sexpr = Lval::lval_sexpr();
                 for lval in lvals {
@@ -37,7 +35,19 @@ pub fn read(parsed: Option<Risp>) -> Lval {
             Risp::LBool(b) => Lval::lval_bool(b),
             Risp::LSyntaxErr(err) => Lval::lval_err(Lerror::GenericError { msg: err }),
             Risp::LPrelude(p) => match p {
+                Prelude::Nil => Lval::lval_qexpr(),
                 Prelude::Lambda => Lval::lval_fun(Lbuiltin::lbuiltin_lambda()),
+                Prelude::Fun => Lval::lval_fun(Lbuiltin::lbuiltin_fun()),
+                Prelude::Fst => Lval::lval_fun(Lbuiltin::lbuiltin_fst()),
+                Prelude::Snd => Lval::lval_fun(Lbuiltin::lbuiltin_snd()),
+                Prelude::Trd => Lval::lval_fun(Lbuiltin::lbuiltin_trd()),
+                Prelude::Nth => Lval::lval_fun(Lbuiltin::lbuiltin_nth()),
+                Prelude::Last => Lval::lval_fun(Lbuiltin::lbuiltin_last()),
+                Prelude::Do => Lval::lval_fun(Lbuiltin::lbuiltin_do()),
+                Prelude::Let => Lval::lval_fun(Lbuiltin::lbuiltin_let()),
+                Prelude::Select => Lval::lval_fun(Lbuiltin::lbuiltin_select()),
+                Prelude::Curry => Lval::lval_fun(Lbuiltin::lbuiltin_curry()),
+                Prelude::Uncurry => Lval::lval_fun(Lbuiltin::lbuiltin_uncurry()),
                 Prelude::Def => Lval::lval_fun(Lbuiltin::lbuiltin_def()),
                 Prelude::Put => Lval::lval_fun(Lbuiltin::lbuiltin_put()),
                 Prelude::List => Lval::lval_fun(Lbuiltin::lbuiltin_list()),
@@ -46,6 +56,12 @@ pub fn read(parsed: Option<Risp>) -> Lval {
                 Prelude::Eval => Lval::lval_fun(Lbuiltin::lbuiltin_eval()),
                 Prelude::Join => Lval::lval_fun(Lbuiltin::lbuiltin_join()),
                 Prelude::Cons => Lval::lval_fun(Lbuiltin::lbuiltin_cons()),
+                Prelude::Take => Lval::lval_fun(Lbuiltin::lbuiltin_take()),
+                Prelude::Drop => Lval::lval_fun(Lbuiltin::lbuiltin_drop()),
+                Prelude::Split => Lval::lval_fun(Lbuiltin::lbuiltin_split()),
+                Prelude::Elemen => Lval::lval_fun(Lbuiltin::lbuiltin_elemen()),
+                Prelude::Map => Lval::lval_fun(Lbuiltin::lbuiltin_map()),
+                Prelude::Filter => Lval::lval_fun(Lbuiltin::lbuiltin_filter()),
                 Prelude::Add => Lval::lval_fun(Lbuiltin::lbuiltin_add()),
                 Prelude::Sub => Lval::lval_fun(Lbuiltin::lbuiltin_sub()),
                 Prelude::Mul => Lval::lval_fun(Lbuiltin::lbuiltin_mul()),
@@ -59,6 +75,10 @@ pub fn read(parsed: Option<Risp>) -> Lval {
                 Prelude::Gte => Lval::lval_fun(Lbuiltin::lbuiltin_gte()),
                 Prelude::Lte => Lval::lval_fun(Lbuiltin::lbuiltin_lte()),
                 Prelude::Get => Lval::lval_fun(Lbuiltin::lbuiltin_get()),
+                Prelude::Not => Lval::lval_fun(Lbuiltin::lbuiltin_not()),
+                Prelude::And => Lval::lval_fun(Lbuiltin::lbuiltin_and()),
+                Prelude::Or => Lval::lval_fun(Lbuiltin::lbuiltin_or()),
+                Prelude::Xor => Lval::lval_fun(Lbuiltin::lbuiltin_xor()),
             },
         },
         None => Lval::lval_err(Lerror::GenericError {

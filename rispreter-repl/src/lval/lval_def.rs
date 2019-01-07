@@ -159,8 +159,22 @@ impl Lval {
         self
     }
 
+    pub fn add_cell_move(mut self, lval: Lval) -> Self {
+        self.cell.push_back(Box::new(lval));
+        self
+    }
+
+    pub fn add_cell_front(&mut self, lval: Lval) -> &mut Self {
+        self.cell.push_front(Box::new(lval));
+        self
+    }
+
     pub fn lval_pop(&mut self) -> Lval {
         *self.cell.pop_front().unwrap()
+    }
+
+    pub fn lval_pop_last(&mut self) -> Lval {
+        *self.cell.pop_back().unwrap()
     }
 
     pub fn lval_pop_with_index(&mut self, index: usize) -> Lval {
@@ -173,9 +187,15 @@ impl Lval {
         *x.unwrap()
     }
 
-    pub fn lval_split(&mut self, index: usize) -> Lval {
-        self.cell = self.cell.split_off(index);
-        self.clone()
+    pub fn lval_split(&mut self, index: usize) -> (Lval, Lval) {
+        // self.cell = self.cell.split_off(index);
+        // self.clone()
+        let buf = self.cell.split_off(index);
+        let v = Lval {
+            ltype: LvalType::LVAL_QEXPR,
+            cell: buf,
+        };
+        (self.clone(), v)
     }
 
     pub fn lval_join(&mut self, other: &mut Lval) {

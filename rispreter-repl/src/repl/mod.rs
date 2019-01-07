@@ -22,36 +22,13 @@ impl RispRepl {
     }
 
     pub fn run(&self) -> io::Result<()> {
-        let prelude = "(def {fun} (\\ {args body} {def (head args) (\\ (tail args) body)}))
-(fun {unpack f xs} {eval (join (list f) xs)})
-(fun {pack f & xs} {f xs})
-(def {uncurry} pack)
-(def {curry} unpack)
-(def {nil} {})
-(fun {do & l} { if (== l nil) {nil} {last l} })
-(fun {let b} { ((\\ {_} b) ()) })
-(fun {not x}   {- 1 x})
-(fun {or x y}  {+ x y})
-(fun {and x y} {* x y})
-(fun {flip f a b} {f b a})
+        let prelude = "(fun {flip f a b} {f b a})
 (fun {ghost & xs} {eval xs})
 (fun {comp f g x} {f (g x)})
-(fun {fst l} { eval (head l) })
-(fun {snd l} { eval (head (tail l)) })
-(fun {trd l} { eval (head (tail (tail l))) })
 (fun {len l} { if (== l nil) {0} {+ 1 (len (tail l))} })
-(fun {nth n l} { if (== n 0) {fst l} {nth (- n 1) (tail l)} })
-(fun {last l} {nth (- (len l) 1) l})
-(fun {take n l} { if (== n 0) {nil} {join (head l) (take (- n 1) (tail l))} })
-(fun {drop n l} { if (== n 0) {l} {drop (- n 1) (tail l)} })
-(fun {split n l} {list (take n l) (drop n l)})
-(fun {elem x l} { if (== l nil) {false} {if (== x (fst l)) {true} {elem x (tail l)}} })
-(fun {map f l} { if (== l nil) {nil} {join (list (f (fst l))) (map f (tail l))} })
-(fun {filter f l} { if (== l nil) {nil} {join (if (f (fst l)) {head l} {nil}) (filter f (tail l))} })
 (fun {foldl f z l} { if (== l nil) {z} {foldl f (f z (fst l)) (tail l)} })
 (fun {sum l} {foldl + 0 l})
 (fun {product l} {foldl * 1 l})
-(fun {select & cs} { if (== cs nil) {error \"No Selection Found\"} {if (fst (fst cs)) {snd (fst cs)} {unpack select (tail cs)}} })
 (def {otherwise} true)
 (fun {case x & cs} { if (== cs nil) {error \"No Case Found\"} {if (== x (fst (fst cs))) {snd (fst cs)} { unpack case (join (list x) (tail cs))}} })
 (fun {fib n} { select { (== n 0) 0 } { (== n 1) 1 } { otherwise (+ (fib (- n 1)) (fib (- n 2))) } })
@@ -133,7 +110,7 @@ impl RispRepl {
 
 struct EnterFunction;
 
-impl <Term: Terminal> Function<Term> for EnterFunction {
+impl<Term: Terminal> Function<Term> for EnterFunction {
     fn execute(&self, prompter: &mut Prompter<Term>, count: i32, _ch: char) -> io::Result<()> {
         if prompter.buffer().ends_with('.') {
             prompter.accept_input()
@@ -147,7 +124,7 @@ impl <Term: Terminal> Function<Term> for EnterFunction {
 }
 
 struct TabFunction;
-impl <Term: Terminal> Function<Term> for TabFunction {
+impl<Term: Terminal> Function<Term> for TabFunction {
     fn execute(&self, prompter: &mut Prompter<Term>, _count: i32, ch: char) -> io::Result<()> {
         if ch == '\t' {
             prompter.insert(4, ' ')

@@ -91,17 +91,139 @@ named!(get<CompleteStr, Risp>,
     do_parse!(tag!("get") >> (Risp::LPrelude(Prelude::Get)))
 );
 
-named!(
-    pub risp_prelude<CompleteStr, Risp>,
+named!(fun<CompleteStr, Risp>,
+    do_parse!(tag!("fun") >> (Risp::LPrelude(Prelude::Fun)))
+);
+
+named!(curry<CompleteStr, Risp>,
+    do_parse!(alt!(tag!("curry") | tag!("unpack")) >> (Risp::LPrelude(Prelude::Curry)))
+);
+
+named!(uncurry<CompleteStr, Risp>,
+    do_parse!(alt!(tag!("uncurry") | tag!("pack")) >> (Risp::LPrelude(Prelude::Uncurry)))
+);
+
+named!(nil<CompleteStr, Risp>,
+    do_parse!(tag!("nil") >> (Risp::LPrelude(Prelude::Nil)))
+);
+
+named!(fst<CompleteStr, Risp>,
+    do_parse!(tag!("fst") >> (Risp::LPrelude(Prelude::Fst)))
+);
+
+named!(snd<CompleteStr, Risp>,
+    do_parse!(tag!("snd") >> (Risp::LPrelude(Prelude::Snd)))
+);
+
+named!(trd<CompleteStr, Risp>,
+    do_parse!(tag!("trd") >> (Risp::LPrelude(Prelude::Trd)))
+);
+
+named!(nth<CompleteStr, Risp>,
+    do_parse!(tag!("nth") >> (Risp::LPrelude(Prelude::Nth)))
+);
+
+named!(last<CompleteStr, Risp>,
+    do_parse!(tag!("last") >> (Risp::LPrelude(Prelude::Last)))
+);
+
+named!(ldo<CompleteStr, Risp>,
+    do_parse!(tag!("do") >> (Risp::LPrelude(Prelude::Do)))
+);
+
+named!(llet<CompleteStr, Risp>,
+    do_parse!(tag!("let") >> (Risp::LPrelude(Prelude::Let)))
+);
+
+named!(not<CompleteStr, Risp>,
+    do_parse!(tag!("not") >> (Risp::LPrelude(Prelude::Not)))
+);
+
+named!(and<CompleteStr, Risp>,
+    do_parse!(tag!("and") >> (Risp::LPrelude(Prelude::And)))
+);
+
+named!(or<CompleteStr, Risp>,
+    do_parse!(tag!("or") >> (Risp::LPrelude(Prelude::Or)))
+);
+
+named!(xor<CompleteStr, Risp>,
+    do_parse!(tag!("xor") >> (Risp::LPrelude(Prelude::Xor)))
+);
+
+named!(select<CompleteStr, Risp>,
+    do_parse!(tag!("select") >> (Risp::LPrelude(Prelude::Select)))
+);
+
+named!(take<CompleteStr, Risp>,
+    do_parse!(tag!("take") >> (Risp::LPrelude(Prelude::Take)))
+);
+
+named!(drop<CompleteStr, Risp>,
+    do_parse!(tag!("drop") >> (Risp::LPrelude(Prelude::Drop)))
+);
+
+named!(split<CompleteStr, Risp>,
+    do_parse!(tag!("split") >> (Risp::LPrelude(Prelude::Split)))
+);
+
+named!(elemen<CompleteStr, Risp>,
+    do_parse!(tag!("elemen") >> (Risp::LPrelude(Prelude::Elemen)))
+);
+
+named!(map<CompleteStr, Risp>,
+    do_parse!(tag!("map") >> (Risp::LPrelude(Prelude::Map)))
+);
+
+named!(filter<CompleteStr, Risp>,
+    do_parse!(tag!("filter") >> (Risp::LPrelude(Prelude::Filter)))
+);
+
+named!(list_op<CompleteStr, Risp>,
     alt!(
-        lambda |
-        def |
+        fst |
+        snd |
+        trd |
+        nth |
+        last |
         list |
         head |
         tail |
         eval |
         join |
         cons |
+        take |
+        drop |
+        split |
+        elemen |
+        map |
+        filter
+    )
+);
+
+named!(log_op<CompleteStr, Risp>,
+    alt!(
+        not |
+        and |
+        or |
+        xor
+    )
+);
+
+named!(
+    pub risp_prelude<CompleteStr, Risp>,
+    alt!(
+        list_op |
+        log_op |
+        lambda |
+        ldo |
+        llet |
+        select |
+        fun |
+        curry |
+        uncurry |
+        nil |
+        def |
         add |
         sub |
         mul |
