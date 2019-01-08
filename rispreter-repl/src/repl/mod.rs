@@ -21,6 +21,24 @@ impl RispRepl {
         RispRepl { env: Lenv::new() }
     }
 
+    pub fn run_instruction(&self, i: &str) {
+        let prelude = "(fun {flip f a b} {f b a})
+(fun {ghost & xs} {eval xs})
+(fun {comp f g x} {f (g x)})
+(fun {len l} { if (== l nil) {0} {+ 1 (len (tail l))} })
+(fun {foldl f z l} { if (== l nil) {z} {foldl f (f z (fst l)) (tail l)} })
+(fun {sum l} {foldl + 0 l})
+(fun {product l} {foldl * 1 l})
+(def {otherwise} true)
+(fun {case x & cs} { if (== cs nil) {error \"No Case Found\"} {if (== x (fst (fst cs))) {snd (fst cs)} { unpack case (join (list x) (tail cs))}} })
+(fun {fib n} { select { (== n 0) 0 } { (== n 1) 1 } { otherwise (+ (fib (- n 1)) (fib (- n 2))) } })
+".to_string();
+        for lines in prelude.lines() {
+            eval_rispreter(&self.env, &lines);
+        }
+        println!("{}", eval_rispreter(&self.env, i));
+    }
+
     pub fn run(&self) -> io::Result<()> {
         let prelude = "(fun {flip f a b} {f b a})
 (fun {ghost & xs} {eval xs})
